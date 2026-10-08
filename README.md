@@ -4,6 +4,16 @@
 
 Prepared for faculty discussion, including Professor María Mercedes Larrondo-Petrie, and designed for learners and educators worldwide. Independent project; no institutional affiliation, endorsement, accreditation, funding access or recognized certification is implied.
 
+## Version 1.3 — Operational studies
+
+- Model-specific inputs, actions, outputs and capability boundaries.
+- Projected 3D teaching-route arrows and deep links to a specific lab/station.
+- Editable phase-by-phase setup timeline with optional start/finish date. Durations are illustrative sequential planning assumptions, not verified lead times.
+- Separate user-entered cost scenarios for each scale, transferable to the planner.
+- Sixteen blank document templates and complete downloadable model studies.
+- Launch and restart review guidance; no equipment operating recipes.
+- 32 starting resources.
+
 ## Version 1.2 — Decision guides
 
 - Start Here journeys for learners, faculty and lab planners.

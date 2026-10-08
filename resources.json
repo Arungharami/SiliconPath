@@ -462,5 +462,53 @@
     "doi": "",
     "review": "Source listing checked; full-content review pending",
     "checked": "2026-10-08"
+  },
+  {
+    "id": "nist-traceability",
+    "title": "Metrological Traceability: NIST Policy",
+    "provider": "NIST",
+    "kind": "Guide",
+    "topic": "Testing",
+    "level": "Intermediate",
+    "url": "https://www.nist.gov/calibrations/traceability",
+    "summary": "An official policy explaining measurement traceability and fitness-for-purpose considerations.",
+    "use": "Use when planning calibration evidence and measurement uncertainty records.",
+    "access": "Listing access; courses or documents may have conditions",
+    "year": "",
+    "doi": "",
+    "review": "Source listing checked; full-content review pending",
+    "checked": "2026-10-08"
+  },
+  {
+    "id": "osha-lab",
+    "title": "Laboratory Safety Publications",
+    "provider": "OSHA",
+    "kind": "Guide",
+    "topic": "Facilities",
+    "level": "Intermediate",
+    "url": "https://www.osha.gov/publications/bytopic/laboratory-safety",
+    "summary": "An official collection of laboratory safety publications.",
+    "use": "Identify relevant guidance for locally reviewed laboratory activities.",
+    "access": "Listing access; courses or documents may have conditions",
+    "year": "",
+    "doi": "",
+    "review": "Source listing checked; full-content review pending",
+    "checked": "2026-10-08"
+  },
+  {
+    "id": "semi-onsite",
+    "title": "SEMI University On-site Training Catalog",
+    "provider": "SEMI",
+    "kind": "Guide",
+    "topic": "Workforce",
+    "level": "Intermediate",
+    "url": "https://www.semi.org/en/semi-university/onsite-training-course-catalog",
+    "summary": "A catalog of training topics and provider-listed course descriptions.",
+    "use": "Compare prerequisites, stated durations and current availability with the intended curriculum.",
+    "access": "Listing access; courses or documents may have conditions",
+    "year": "",
+    "doi": "",
+    "review": "Source listing checked; full-content review pending",
+    "checked": "2026-10-08"
   }
 ]

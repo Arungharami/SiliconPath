@@ -378,3 +378,42 @@ Suggested use: Identify metrology questions and follow the original linked resea
 A research-project page describing physics and AI approaches to semiconductor dimensional metrology.
 
 Suggested use: Distinguish project objectives from published validated findings; inspect linked code and publications.
+
+## Metrological Traceability: NIST Policy
+
+- Organization: NIST
+- Format / topic / level: Guide / Testing / Intermediate
+- Access: Listing access; courses or documents may have conditions
+- Source: https://www.nist.gov/calibrations/traceability
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+An official policy explaining measurement traceability and fitness-for-purpose considerations.
+
+Suggested use: Use when planning calibration evidence and measurement uncertainty records.
+
+## Laboratory Safety Publications
+
+- Organization: OSHA
+- Format / topic / level: Guide / Facilities / Intermediate
+- Access: Listing access; courses or documents may have conditions
+- Source: https://www.osha.gov/publications/bytopic/laboratory-safety
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+An official collection of laboratory safety publications.
+
+Suggested use: Identify relevant guidance for locally reviewed laboratory activities.
+
+## SEMI University On-site Training Catalog
+
+- Organization: SEMI
+- Format / topic / level: Guide / Workforce / Intermediate
+- Access: Listing access; courses or documents may have conditions
+- Source: https://www.semi.org/en/semi-university/onsite-training-course-catalog
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+A catalog of training topics and provider-listed course descriptions.
+
+Suggested use: Compare prerequisites, stated durations and current availability with the intended curriculum.

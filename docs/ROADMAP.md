@@ -33,3 +33,6 @@ Implemented: audience-based entry points, equipment-to-skill guide, quote-based 
 3. Verify equipment examples and activity rubrics with faculty before claiming review.
 4. Document a real small pilot, with separate attendance, completion and skill evidence.
 5. Add confirmed facility case studies and current course-provider enrollment conditions.
+
+## Version 1.3 — Operational model studies
+Implemented: per-scale inputs/outputs, setup phases, editable illustrative week assumptions, user cost scenarios, a sixteen-document baseline pack, exports and launch/restart review guidance. 3D routes connect the conceptual stations. The model does not verify institutional approvals, costs, supplier dates or fabrication recipes.
