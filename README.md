@@ -4,6 +4,15 @@
 
 Prepared for faculty discussion, including Professor María Mercedes Larrondo-Petrie, and designed for learners and educators worldwide. Independent project; no institutional affiliation, endorsement, accreditation, funding access or recognized certification is implied.
 
+## Version 1.2 — Decision guides
+
+- Start Here journeys for learners, faculty and lab planners.
+- Nine equipment categories with skills, tasks, selection criteria, dependencies and original source links.
+- Six draft curriculum modules with student outputs and rubric dimensions; selected module export.
+- Quote-based USD worksheet with one-time, annual and first-year subtotals; included in lab brief and workspace backup. Blank costs stay unspecified.
+- 29 starting resources and direct book/video/course/paper/report shortcuts.
+- Grouped navigation that keeps planning tools together.
+
 ## Version 1.1 — Lab Studio
 
 - Interactive 3D micro, medium and large lab concepts, rendered from three-dimensional geometry without external libraries.
@@ -16,7 +25,7 @@ Prepared for faculty discussion, including Professor María Mercedes Larrondo-Pe
 ## First release
 
 - Six learning paths: foundations, fabrication, devices and testing, chip design, packaging and research, and workforce planning.
-- 22 starting resources across books, courses, videos, guides, papers, reports and collections.
+- 29 starting resources across books, courses, videos, guides, papers, reports and collections.
 - Search and combined format/topic/level filters, detail guides and saved reading lists.
 - Study activities, knowledge checks, self-reported progress and exportable study guides.
 - Training-center planner with digital classroom, measurement/testing and fabrication models; ten-step checklist and exportable faculty brief.

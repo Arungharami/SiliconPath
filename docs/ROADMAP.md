@@ -23,3 +23,13 @@ Complete and review one useful pathway before increasing catalog volume. Partner
 
 ## Version 1.1 — Three-scale lab studio
 Implemented: projected 3D equipment geometry, micro/medium/large teaching models, camera controls, paced process animations, station study panels, planner integration and guide export. Scope is educational visualization. Next: validate proposed equipment examples and instructional sequences with a qualified faculty reviewer, then run browser usability checks on desktop and mobile.
+
+## Version 1.2 — Useful decision guides
+Implemented: audience-based entry points, equipment-to-skill guide, quote-based cost worksheet, faculty curriculum map and clearer navigation.
+
+## Next content priorities
+1. Fully read and annotate selected research papers with page references and limitations.
+2. Expand introductory book selections using authorized publisher or open-textbook sources.
+3. Verify equipment examples and activity rubrics with faculty before claiming review.
+4. Document a real small pilot, with separate attendance, completion and skill evidence.
+5. Add confirmed facility case studies and current course-provider enrollment conditions.

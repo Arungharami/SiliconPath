@@ -287,3 +287,94 @@ Suggested use: Use as background; facility-specific procedures require instituti
 FAU announced $1 million for a Chip Design Hub led by Professor Larrondo-Petrie within a $4 million multi-program award.
 
 Suggested use: Read the institutional announcement; it does not establish a partnership with SiliconPath.
+
+## XYZs of Oscilloscopes Primer
+
+- Organization: Tektronix
+- Format / topic / level: Guide / Testing / Beginner
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.tek.com/en/documents/primer/xyzs-oscilloscopes-primer
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+A manufacturer primer covering oscilloscope concepts and controls.
+
+Suggested use: Review signal display, instrument controls and selection criteria before a supervised activity.
+
+## ABCs of Probes Primer
+
+- Organization: Tektronix
+- Format / topic / level: Guide / Testing / Intermediate
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.tek.com/en/documents/whitepaper/abcs-probes-primer
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+A manufacturer learning resource about probes and measurement-system behavior.
+
+Suggested use: Check probe compatibility and limitations against the planned measurement.
+
+## Semiconductor Parameter Analyzers
+
+- Organization: Keysight
+- Format / topic / level: Guide / Testing / Advanced
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.keysight.com/gb/en/products/semiconductors/parameter-analyzers.html
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+An official product-category reference for device characterization instruments.
+
+Suggested use: Use to understand instrument capabilities; validate selected model specifications and access independently.
+
+## Semiconductors — Hazards and Solutions
+
+- Organization: OSHA
+- Format / topic / level: Guide / Facilities / Intermediate
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.osha.gov/semiconductors/hazards-solutions
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+A government overview of potential hazards and controls in semiconductor manufacturing.
+
+Suggested use: Use as background for local facility review; it does not substitute for process-specific analysis.
+
+## Silicon Device Manufacturing
+
+- Organization: OSHA
+- Format / topic / level: Guide / Fabrication / Intermediate
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.osha.gov/semiconductors/silicon
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+An overview of semiconductor manufacturing process groups and related hazards.
+
+Suggested use: Connect process categories with facility review questions.
+
+## CHIPS Metrology Program
+
+- Organization: NIST
+- Format / topic / level: Guide / Research / Intermediate
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.nist.gov/chips/research-development-programs/metrology-program
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+An official overview of semiconductor measurement research priorities.
+
+Suggested use: Identify metrology questions and follow the original linked research results.
+
+## Overlay Metrology Using Physics and AI-Based Scanning Electron Microscopy
+
+- Organization: NIST
+- Format / topic / level: Guide / Research / Advanced
+- Access: Source listing; downloads may have access conditions
+- Source: https://www.nist.gov/programs-projects/overlay-metrology-using-physics-and-ai-based-scanning-electron-microscopy
+- Listing checked: 2026-10-08
+- Review: Source listing checked; full-content review pending
+
+A research-project page describing physics and AI approaches to semiconductor dimensional metrology.
+
+Suggested use: Distinguish project objectives from published validated findings; inspect linked code and publications.
