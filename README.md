@@ -2,7 +2,12 @@
 
 **From semiconductor knowledge to capability.** A public study library and training-center planning platform created and curated by **Arun Kumar Gharami**.
 
-Prepared for faculty discussion, including Professor María Mercedes Larrondo-Petrie, and designed for learners and educators worldwide. Independent project; no institutional affiliation, endorsement, accreditation, funding access or recognized certification is implied.
+Created and curated by [Arun Kumar Gharami ↗](https://www.arungharami.info/)
+
+mentor: Professor María Mercedes Larrondo-Petrie.
+
+Independent educational project · Prepared for faculty discussion,
+No institutional affiliation, endorsement, accreditation or certification is implied.
 
 ## Version 1.3 — Operational studies
 
@@ -29,7 +34,7 @@ Prepared for faculty discussion, including Professor María Mercedes Larrondo-Pe
 - Orbit, zoom, top view, equipment selection, labels and a paced animated tour.
 - Twelve educational workflow topics with inputs, outputs, activities, dependencies and linked sources.
 - Lab-to-planner transfer and exported lab study guides.
-- Credits: Created and curated by Arun Kumar Gharami. Mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
+- Credits: Created and curated by Arun Kumar Gharami. mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
 - Conceptual animation only: no live hardware, fabricated device data, engineering dimensions or operating recipes.
 
 ## First release
