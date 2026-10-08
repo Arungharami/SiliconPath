@@ -4,8 +4,6 @@
 
 Created and curated by [Arun Kumar Gharami ↗](https://www.arungharami.info/)
 
-Mentor: Professor María Mercedes Larrondo-Petrie.
-
 Independent educational project · Prepared for faculty discussion,
 No institutional affiliation, endorsement, accreditation or certification is implied.
 
@@ -34,7 +32,7 @@ No institutional affiliation, endorsement, accreditation or certification is imp
 - Orbit, zoom, top view, equipment selection, labels and a paced animated tour.
 - Twelve educational workflow topics with inputs, outputs, activities, dependencies and linked sources.
 - Lab-to-planner transfer and exported lab study guides.
-- Credits: Created and curated by Arun Kumar Gharami. Mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
+- Credits: Created and curated by Arun Kumar Gharami. Independent educational project.
 - Conceptual animation only: no live hardware, fabricated device data, engineering dimensions or operating recipes.
 
 ## First release
