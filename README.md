@@ -4,7 +4,7 @@
 
 Created and curated by [Arun Kumar Gharami ↗](https://www.arungharami.info/)
 
-mentor: Professor María Mercedes Larrondo-Petrie.
+Mentor: Professor María Mercedes Larrondo-Petrie.
 
 Independent educational project · Prepared for faculty discussion,
 No institutional affiliation, endorsement, accreditation or certification is implied.
@@ -34,7 +34,7 @@ No institutional affiliation, endorsement, accreditation or certification is imp
 - Orbit, zoom, top view, equipment selection, labels and a paced animated tour.
 - Twelve educational workflow topics with inputs, outputs, activities, dependencies and linked sources.
 - Lab-to-planner transfer and exported lab study guides.
-- Credits: Created and curated by Arun Kumar Gharami. mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
+- Credits: Created and curated by Arun Kumar Gharami. Mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
 - Conceptual animation only: no live hardware, fabricated device data, engineering dimensions or operating recipes.
 
 ## First release
@@ -88,3 +88,7 @@ Do not assume a domain until Vercel returns a successful deployment URL. The exi
 Personal notes, reading lists and progress use browser localStorage. There is no server, account system or cloud sync. Export for a portable copy. Restore replaces the current local workspace after confirmation. External content stays with its owner; this project links to authorized source pages and does not redistribute paid publications.
 
 See [development roadmap](docs/ROADMAP.md), [editorial guide](docs/EDITORIAL_GUIDE.md) and [resource catalog](docs/RESOURCE_CATALOG.md).
+
+## Project contact
+
+For project consulting, contract discussions or voluntary collaboration: [arun_gharami@live.com](mailto:arun_gharami@live.com). Participation and terms require individual agreement.
