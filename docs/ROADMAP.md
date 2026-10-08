@@ -20,3 +20,6 @@ Add source-grounded search, transparent citations, carefully scoped simulations,
 
 ## Expansion rule
 Complete and review one useful pathway before increasing catalog volume. Partnership, certification, cost and readiness claims require supporting evidence.
+
+## Version 1.1 — Three-scale lab studio
+Implemented: projected 3D equipment geometry, micro/medium/large teaching models, camera controls, paced process animations, station study panels, planner integration and guide export. Scope is educational visualization. Next: validate proposed equipment examples and instructional sequences with a qualified faculty reviewer, then run browser usability checks on desktop and mobile.

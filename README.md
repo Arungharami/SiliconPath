@@ -4,6 +4,15 @@
 
 Prepared for faculty discussion, including Professor María Mercedes Larrondo-Petrie, and designed for learners and educators worldwide. Independent project; no institutional affiliation, endorsement, accreditation, funding access or recognized certification is implied.
 
+## Version 1.1 — Lab Studio
+
+- Interactive 3D micro, medium and large lab concepts, rendered from three-dimensional geometry without external libraries.
+- Orbit, zoom, top view, equipment selection, labels and a paced animated tour.
+- Twelve educational workflow topics with inputs, outputs, activities, dependencies and linked sources.
+- Lab-to-planner transfer and exported lab study guides.
+- Credits: Created and curated by Arun Kumar Gharami. Mentor: Professor María Mercedes Larrondo-Petrie. Independent educational project.
+- Conceptual animation only: no live hardware, fabricated device data, engineering dimensions or operating recipes.
+
 ## First release
 
 - Six learning paths: foundations, fabrication, devices and testing, chip design, packaging and research, and workforce planning.
@@ -44,11 +53,11 @@ vercel project inspect --non-interactive
 vercel --prod --scope aruns-projects-ba93fc58
 ```
 
-Do not assume a domain until Vercel returns a successful deployment URL. This session's Vercel connection denied project creation; the site was not deployed by that connection.
+Do not assume a domain until Vercel returns a successful deployment URL. The existing production project is `siliconpath`, with public address https://siliconpath-six.vercel.app/. Verify deployment state and commit when releasing changes.
 
 ## Validation
 
-`npm run check` validates catalog structure and JavaScript syntax. `npm test` runs functional/content checks in a Node VM for routes, references, filters, escaping and exports. It is **not** browser or visual verification. CI runs validation and build. No remote link availability guarantee is made.
+`npm run check` validates catalog structure and JavaScript syntax. `npm test` runs functional/content checks in a Node VM for routes, references, filters, escaping and exports. It is **not** browser verification. Representative projected 3D scenes were also rendered to images for geometry review; full-page browser QA remains outstanding. CI runs validation and build. No remote link availability guarantee is made.
 
 ## Data and authorship
 

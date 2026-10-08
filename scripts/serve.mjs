@@ -1,5 +1,5 @@
 import {createServer} from 'node:http';import {readFile} from 'node:fs/promises';import {resolve,extname,sep} from 'node:path';import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));const port=Number(process.env.PORT)||5173;
 const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.svg':'image/svg+xml'};
-const allowed=new Set(['index.html','styles.css','app.js','resources.json','favicon.svg']);
+const allowed=new Set(['index.html','styles.css','app.js','lab.js','resources.json','favicon.svg']);
 createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\//,'')||'index.html';const file=resolve(root,name);if(!file.startsWith(root+sep)||!allowed.has(name)){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':`${types[extname(file)]||'text/plain'}; charset=utf-8`,'Cache-Control':'no-store'});res.end(await readFile(file))}catch{res.writeHead(404);res.end('Not found')}}).listen(port,'127.0.0.1',()=>console.log(`SiliconPath: http://localhost:${port}`));
