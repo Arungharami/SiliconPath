@@ -1,0 +1,39 @@
+name: Source or learning review
+description: Propose a correction or review a learning activity with evidence.
+title: "[Content] "
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Page, pathway or resource ID
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed correction or improvement
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Original sources and evidence
+      description: Include URLs, dates and page references where relevant.
+    validations:
+      required: true
+  - type: dropdown
+    id: review
+    attributes:
+      label: Review performed
+      options:
+        - Source listing checked
+        - Full source read
+        - Activity reproduced
+        - Qualified subject review
+        - Proposal only
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Access conditions, permissions and limitations
