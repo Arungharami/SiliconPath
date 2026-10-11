@@ -1,58 +1,38 @@
-# SiliconPath organization setup — prepared, not created
+# SiliconPath organization publication and access
 
-Status: proposed organization identities. No organization URL below is represented as an active project account.
+## Current facts
+- The maintainer supplied the GitHub organization settings path for **SiliconPath-six** on October 11, 2026.
+- The connected tools currently list no accessible organization repositories or memberships.
+- Access to the supplied profile settings URL returned ERR_BLOCKED_BY_CLIENT.
+- These results do not establish whether the organization is missing, empty or simply outside the connection's access.
+- The existing source repository remains Arungharami/SiliconPath. Its latest inspected CI run completed successfully.
+- A dedicated Hugging Face organization has not been verified; the connected account is arun-gharami and currently has no repository-write scope.
 
-## Consistent identity
+## Public profile fields
 - Display name: SiliconPath
-- Preferred handle: siliconpath (availability must be checked)
-- Alternative: siliconpath-labs (availability must be checked)
-- Description: Semiconductor education, training-lab planning and volunteer project support.
+- Description: Semiconductor education, training-lab planning, and volunteer project support. Connecting credible knowledge, workforce preparation, and practical digital tools.
 - Website: https://siliconpath-six.vercel.app/
-- Public contact: arun_gharami@live.com
-- Maintainer: Arun Kumar Gharami
-- Independent educational initiative; no institutional endorsement implied.
+- Email: arun_gharami@live.com
+- Avatar: the SiliconPath logo created for the project.
+- Organization handle supplied by maintainer: SiliconPath-six.
 
-## GitHub
-Create an organization through https://github.com/organizations/plan using the free plan if suitable.
-Use the verified available handle; publish the profile copy below in an organization-owned `.github` repository at `profile/README.md`.
+## GitHub owner steps
+1. Save the above public profile fields in the organization settings.
+2. Create a public organization-owned repository named `.github`, if it does not already exist.
+3. Create `profile/README.md` in that repository using [the complete prepared profile](GITHUB_ORGANIZATION_PROFILE.md).
+4. In the existing ChatGPT GitHub connection's organization installation, review access for SiliconPath-six and select the profile repository if appropriate. App installation and authorization are separate from website login. Only the organization owner can resolve required owner approvals.
+5. Re-check connector visibility before publishing further files.
 
-The existing canonical repository remains https://github.com/Arungharami/SiliconPath. Keep that source and Vercel connection working. Moving it into an organization is a separate action requiring permission, integration review and deployment verification.
+The currently exposed connector supports file writes but does not expose repository creation or organization profile administration. Installation access cannot add operations that the tool does not implement.
 
-Suggested later repositories: project profile, reviewed learning materials, bounded demos and a clearly documented resource catalog. Create only repositories containing useful maintained work.
+Keep the existing application repository and Vercel Git connection working. A transfer into the organization requires separate integration review and is not necessary to publish an organization profile.
 
-## Hugging Face
-Create an organization through https://huggingface.co/organizations/new.
-Prepare an organization card in its `README` Space following the current official documentation:
-https://huggingface.co/docs/hub/organizations-cards
+## Hugging Face owner steps
+Create the intended organization using the same public brand. Confirm the actual available handle, owner access and write authorization before publishing [the prepared organization card](HUGGINGFACE_ORGANIZATION_CARD.md) in a README Space.
 
-The connected account is arun-gharami. The current connector grants read-repos but not repository writes. An organization and upload access are needed before publishing the card or a Space.
+Do not publish empty model or dataset repositories as evidence of maturity. Publish a documented demo or dataset only when it contains actual usable work and required permissions.
 
-Publish a genuine static educational demo as a Space when ready. Do not create an empty model or dataset repository simply to make the project appear established.
-
-## Ready-to-publish profile copy
-# SiliconPath
-**From semiconductor knowledge to practical capability.**
-
-SiliconPath connects credible semiconductor education with training-lab planning, digital tools and voluntary project support.
-
-### Mission
-Help learners and project teams make informed decisions through structured knowledge, reviewable planning and useful prototypes.
-
-### Work
-- Learning paths and curated original sources.
-- Conceptual lab workflows and exportable planning documents.
-- Equipment research and workforce preparation.
-- Bounded digital demonstrations and volunteer coordination.
-
-### Explore
-- Website: https://siliconpath-six.vercel.app/
-- Services: https://siliconpath-six.vercel.app/#support
-- About: https://siliconpath-six.vercel.app/#about
-- Canonical source: https://github.com/Arungharami/SiliconPath
-- Maintainer: https://www.arungharami.info/
-- Contact: arun_gharami@live.com
-
-Independent educational project. No institutional affiliation, endorsement, accreditation or certification is implied. Review status and limitations are documented in the source repository.
-
-## Verification checklist after creation
-Confirm owner access, exact public handle, profile copy and links. Publish only real deliverables. Mark proposals as proposals. Enable appropriate account security and reviewer roles through owner settings. Document the actual created accounts before linking them from the website.
+## References
+- https://docs.github.com/en/apps/using-github-apps/installing-a-github-app-from-a-third-party
+- https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/customizing-your-organizations-profile
+- https://huggingface.co/docs/hub/organizations-cards
