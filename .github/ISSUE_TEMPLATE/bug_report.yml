@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible problem in the SiliconPath platform.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Use sample data. Do not include confidential records, tokens or passwords."
+  - type: input
+    id: page
+    attributes:
+      label: Page or route
+      placeholder: "#planner"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the input, expected behavior and actual behavior.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and impact
+      description: Redacted screenshots or error messages, if available.
