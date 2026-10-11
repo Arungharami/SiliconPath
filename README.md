@@ -40,7 +40,7 @@ This is a working independent educational platform and a proposed volunteer serv
 - Tests run in a Node VM; full browser and visual verification remains outstanding.
 - Source descriptions summarize listings; full-content and faculty review are pending.
 - Detailed Vivo-related warehouse and volunteer project case studies require exact roles, dates, permitted names and supporting evidence.
-- Organization profiles are prepared. Organization creation is currently blocked by this browser's access restrictions; neither dedicated organization has been created.
+- The maintainer supplied the GitHub organization name SiliconPath-six. Connector access and organization profile publication remain unverified; see the prepared profile and access guide. A dedicated Hugging Face organization is not verified.
 
 ## Local development
 Requires Node.js 20 or later. No runtime npm dependencies.
