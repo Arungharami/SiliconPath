@@ -23,7 +23,7 @@ The October 11 platform update passed 35 Node VM functional/content checks, synt
 Acceptance: a reviewed scope, evidence-backed sources, reproducible demonstration, documented limitations and a usable handover. No accreditation or production-readiness claim follows automatically.
 
 ## Public organization identity — blocked
-GitHub and Hugging Face organization profiles are prepared. On October 11, the authorized browser attempts to open both organization creation pages failed with ERR_BLOCKED_BY_CLIENT. Neither organization was created. The canonical repository remains Arungharami/SiliconPath.
+GitHub and Hugging Face organization profiles are prepared. On October 11, the authorized browser attempts to open both organization creation pages failed with ERR_BLOCKED_BY_CLIENT. The maintainer subsequently supplied the GitHub organization name SiliconPath-six. Its current state and connector access remain unverified; a dedicated Hugging Face organization is not verified. The canonical repository remains Arungharami/SiliconPath.
 
 After creation, publish profiles, verify owner access and only then link the confirmed accounts from the platform. Any repository transfer requires integration and deployment review.
 
