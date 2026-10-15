@@ -1,11 +1,18 @@
 ![SiliconPath — Learn, plan, contribute](assets/siliconpath-banner.svg)
 
 # SiliconPath
-**Semiconductor education, training-lab planning & volunteer project support**
+**Semiconductor Learning & Lab Development**
 
 [Visit SiliconPath](https://siliconpath-six.vercel.app/) · [About & mission](https://siliconpath-six.vercel.app/#about) · [Services](https://siliconpath-six.vercel.app/#support) · [Project charter](docs/PROJECT_CHARTER.md) · [Contribute](CONTRIBUTING.md)
 
 Created and curated by [Arun Kumar Gharami](https://www.arungharami.info/).
+
+## Course concept and future labs
+[Explore the digital development plan](https://siliconpath-six.vercel.app/#initiative) · [Course proposal](docs/FAU_COURSE_CONCEPT.md) · [Two-lab master plan](docs/SILICONPATH_MASTER_PLAN.md)
+
+The October 15 expansion separates a possible FAU teaching concept for faculty discussion from Arun’s proposed digital platform and future two-lab development. Includes an illustrative eight-block sequence, assessment proposal, team and office model, phased resource planning and a downloadable brief. No course approval, lab operation, partnership or funding is claimed.
+
+Project display name: SiliconPath — Semiconductor Learning & Lab Development. Canonical repository name: SiliconPath. Existing repository and deployment identities are retained.
 
 ## Mission
 Connect credible semiconductor learning with practical planning, digital tools and voluntary project support so learners and project teams can make informed decisions.
@@ -76,3 +83,4 @@ Edit `resources.json` for catalog changes. Run `npm run check`, `npm test` and `
 Vercel uses build command `npm run build`, output directory `dist` and the existing SiliconPath project. Notes and progress use browser localStorage. No account system or cloud synchronization is implemented.
 
 See [roadmap](docs/ROADMAP.md), [editorial guide](docs/EDITORIAL_GUIDE.md) and [resource catalog](docs/RESOURCE_CATALOG.md).
+

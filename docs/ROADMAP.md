@@ -1,5 +1,12 @@
 # SiliconPath roadmap
-Updated: October 11, 2026. Status describes implemented work separately from proposed work.
+Updated: October 15, 2026. Status describes implemented work separately from proposed work.
+
+## October 15 — course concept and two-lab proposal
+- New Course & future labs route, with separate course and lab views.
+- Illustrative eight-block teaching plan, faculty-review questions and downloadable discussion brief.
+- Proposed team, remote office, two-lab development and resource milestones.
+- Detailed [course concept](FAU_COURSE_CONCEPT.md) and [master plan](SILICONPATH_MASTER_PLAN.md).
+- These are planning tools; no approved FAU course, physical lab, confirmed partnership or funding is asserted.
 
 ## Available
 - Six guided pathways, resource library and browser-local study desk.
@@ -35,3 +42,4 @@ Consider source-grounded search, clearly labeled simulations and reviewed resear
 
 ## Expansion rule
 Improve and review one useful pathway before expanding catalog volume. Partnerships, certification, price, delivery-time and measured outcomes require evidence.
+

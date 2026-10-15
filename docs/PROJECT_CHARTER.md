@@ -38,3 +38,8 @@ Resource full-content review, faculty validation, full browser QA and documented
 
 ## Contact
 arun_gharami@live.com
+
+
+## Proposed development direction — October 15, 2026
+Project display name: SiliconPath — Semiconductor Learning & Lab Development. Repository: Arungharami/SiliconPath.
+The course concept for FAU faculty discussion is separate from Arun’s proposed digital platform and future labs. See [course concept](FAU_COURSE_CONCEPT.md) and [two-lab master plan](SILICONPATH_MASTER_PLAN.md). Faculty attribution and institutional participation require confirmation.
