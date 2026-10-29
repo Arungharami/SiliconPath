@@ -41,9 +41,11 @@ window.CircuitLab = (() => {
       '<div class="logic-diagram"><svg viewBox="0 0 520 180" role="img" aria-labelledby="logic-svg-title logic-svg-desc"><title id="logic-svg-title">' + gate.label + ' gate schematic</title><desc id="logic-svg-desc">Binary input A is ' + state.a + (state.gate === 'NOT' ? '' : ' and input B is ' + state.b) + '. The simulated output is ' + y + '.</desc>' +
       '<path d="M24 48 H155 M24 132 H155 M275 90 H470" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' +
       (state.gate === 'NOT' ? '<path d="M155 24 L155 156 L275 90 Z" fill="#e7efdb" stroke="#20594e" stroke-width="3"/><circle cx="286" cy="90" r="10" fill="#f7f8f2" stroke="#20594e" stroke-width="3"/>' :
-      '<path d="M155 24 L210 24 Q320 24 320 90 Q320 156 210 156 L155 156 Z" fill="#e7efdb" stroke="#20594e" stroke-width="3"/>' +
-      (state.gate === 'AND' || state.gate === 'NAND' ? '<path d="M155 24 H210 Q320 24 320 90 Q320 156 210 156 H155 Z" fill="#e7efdb" stroke="#20594e" stroke-width="3"/>' : '') +
-      (state.gate === 'NAND' || state.gate === 'NOR' || state.gate === 'XNOR' ? '<circle cx="332" cy="90" r="10" fill="#f7f8f2" stroke="#20594e" stroke-width="3"/>' : '') ) +
+      ((state.gate === 'OR' || state.gate === 'NOR' || state.gate === 'XOR' || state.gate === 'XNOR') ?
+        '<path d="M155 24 Q190 90 155 156 Q245 156 320 90 Q245 24 155 24 Z" fill="#e7efdb" stroke="#20594e" stroke-width="3"/>' +
+        ((state.gate === 'XOR' || state.gate === 'XNOR') ? '<path d="M137 24 Q172 90 137 156" fill="none" stroke="#20594e" stroke-width="3"/>' : '') :
+        '<path d="M155 24 H210 A66 66 0 0 1 210 156 H155 Z" fill="#e7efdb" stroke="#20594e" stroke-width="3"/>') +
+      (state.gate === 'NAND' || state.gate === 'NOR' || state.gate === 'XNOR' ? '<circle cx="332" cy="90" r="10" fill="#f7f8f2" stroke="#20594e" stroke-width="3"/>' : '')) +
       '<text x="34" y="38" fill="currentColor" font-size="13">A = ' + state.a + '</text>' +
       (state.gate === 'NOT' ? '' : '<text x="34" y="122" fill="currentColor" font-size="13">B = ' + state.b + '</text>') +
       '<text x="430" y="76" fill="currentColor" font-size="13">OUTPUT</text><circle cx="470" cy="90" r="20" fill="' + (y ? '#d5e9a9' : '#f2d5a0') + '" stroke="#20594e" stroke-width="3"/><text x="470" y="96" text-anchor="middle" fill="#193c38" font-size="17" font-weight="700">' + y + '</text>' +
