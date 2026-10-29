@@ -5,7 +5,7 @@
   "description": "SiliconPath \u2014 Semiconductor Learning & Lab Development: course concepts, digital learning and future labs",
   "type": "module",
   "scripts": {
-    "check": "node scripts/catalog.mjs check && node --check app.js && node --check lab.js && node --check guides.js && node --check operations.js && node --check packaging.js && node --check initiative.js",
+    "check": "node scripts/catalog.mjs check && node --check app.js && node --check lab.js && node --check guides.js && node --check operations.js && node --check packaging.js && node --check initiative.js && node --check circuit.js",
     "test": "node scripts/test.mjs",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/serve.mjs",
