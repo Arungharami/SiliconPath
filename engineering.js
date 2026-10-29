@@ -69,7 +69,7 @@ connectToBroker();\nwhile (true) {\n  value = readSensor();\n  publish("lab/devi
       if(t.dataset.resetProject){const id=t.dataset.resetProject,p=progress(),n=notes();delete p[id];delete n[id];write('sp-engineering-progress',p);write('sp-engineering-notes',n);rerender('projects/'+id)}
     });
   }
-  function rerender(route){const main=document.querySelector('#main');if(main)main.innerHTML=route.startsWith('projects')?projectsPage(route.split('/')[1]||''):codePage(route.split('/')[1]||'');}
+  function rerender(route){const active=document.activeElement;const selector=active&&active.matches('[data-project-search]')?'[data-project-search]':active&&active.matches('[data-code-search]')?'[data-code-search]':'';const start=selector?active.selectionStart:null,end=selector?active.selectionEnd:null;const main=document.querySelector('#main');if(main)main.innerHTML=route.startsWith('projects')?projectsPage(route.split('/')[1]||''):codePage(route.split('/')[1]||'');if(selector){const next=document.querySelector(selector);if(next){next.focus();if(start!==null&&end!==null)next.setSelectionRange(start,end)}}}
   function toast(message){const n=document.querySelector('#toast');if(n){n.textContent=message;n.style.display='block';setTimeout(()=>n.style.display='none',2500)}}
   return {projects,examples,projectsPage,codePage,bind};
 })();
