@@ -66,7 +66,7 @@ check('Course page is discoverable and its module is shipped',()=>{assert.ok(a.h
 vm.runInContext(await readFile(new URL('../circuit.js',import.meta.url),'utf8'),context);
 const circuit=context.window.CircuitLab;
 check('Digital circuit lab defines all seven standard gates',()=>assert.deepEqual(Object.keys(circuit.gates),['AND','OR','NOT','NAND','NOR','XOR','XNOR']));
-check('Digital logic truth tables are correct',()=>{const expected={AND:[0,0,0,1],OR:[0,1,1,1],NAND:[1,1,1,0],NOR:[1,0,0,0],XOR:[0,1,1,0],XNOR:[1,0,0,1]};for(const [gate,values] of Object.entries(expected))assert.deepEqual(circuit.truthTable(gate).map(r=>r.y),values,gate);assert.deepEqual(circuit.truthTable('NOT').map(r=>r.y),[1,0]);});
+check('Digital logic truth tables are correct',()=>{const expected={AND:[0,0,0,1],OR:[0,1,1,1],NAND:[1,1,1,0],NOR:[1,0,0,0],XOR:[0,1,1,0],XNOR:[1,0,0,1]};for(const [gate,values] of Object.entries(expected))assert.deepEqual(Array.from(circuit.truthTable(gate),r=>r.y),values,gate);assert.deepEqual(Array.from(circuit.truthTable('NOT'),r=>r.y),[1,0]);});
 check('Digital circuit lab rejects invalid gates and non-binary inputs',()=>{assert.throws(()=>circuit.output('IMAGINARY',0,1));assert.throws(()=>circuit.output('AND',2,0));});
 check('Digital circuit lab renders accessible controls and truth table',()=>{const h=circuit.page();assert.ok(h.includes('aria-pressed'));assert.ok(h.includes('Truth table'));assert.ok(h.includes('not a physical circuit measurement'));assert.ok(h.includes('data-logic-gate'));assert.ok(h.includes('data-logic-reset'));});
 console.log(`${checks} functional/content checks passed. These are VM checks, not browser or visual verification.`);
