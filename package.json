@@ -1,6 +1,6 @@
 {
   "name": "siliconpath",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "SiliconPath — Semiconductor Learning & Lab Development: course concepts, digital learning and future labs",
   "type": "module",
@@ -14,7 +14,8 @@
     "format": "prettier --write \"*.js\" \"*.css\" \"*.json\" \"scripts/*.mjs\"",
     "format:check": "prettier --check \"*.js\" \"*.css\" \"*.json\" \"scripts/*.mjs\"",
     "test:e2e": "node scripts/e2e.mjs",
-    "test:rtl": "node scripts/rtl-crosscheck.mjs --require-tools --verify-synth"
+    "test:rtl": "node scripts/rtl-crosscheck.mjs --require-tools --verify-synth",
+    "synth:rtl": "node scripts/rtl-crosscheck.mjs --require-tools --write-synth"
   },
   "engines": {
     "node": ">=20"
