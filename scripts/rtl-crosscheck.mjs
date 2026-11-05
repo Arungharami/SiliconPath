@@ -119,19 +119,25 @@ async function crossCheck({
     if (latch) {
       if (!e.latch)
         return fail(name, `expected latch error, got: ${e.message}`);
-      const y = await yosysLog(src, top, "proc");
-      if (!/Latch inferred/.test(y.log))
-        return fail(name, "engine reports a latch but Yosys does not");
+      // Structural check (independent of log wording across versions):
+      // after proc, the design must contain a latch cell ($dlatch, $adlatch, ...).
+      const y = await yosysLog(src, top, "proc; select -assert-any t:$*latch*");
+      if (!y.ok) return fail(name, "engine reports a latch but Yosys does not");
       checked++;
       return console.log(`✓ ${name}: latch reported by engine and Yosys`);
     }
     return fail(name, `engine rejected the design: ${e.message}`);
   }
   if (latch) return fail(name, "engine accepted a design expected to latch");
-  const y = await yosysLog(src, top, "proc; synth -top " + top);
-  if (!y.ok) return fail(name, "Yosys failed:\n" + y.log);
-  if (/Latch inferred/.test(y.log))
+  const latchFree = await yosysLog(
+    src,
+    top,
+    "proc; select -assert-none t:$*latch*",
+  );
+  if (!latchFree.ok)
     return fail(name, "Yosys inferred a latch the engine did not report");
+  const y = await yosysLog(src, top, "synth -top " + top);
+  if (!y.ok) return fail(name, "Yosys failed:\n" + y.log);
   const rows = clock
     ? E.runCycles(
         design,
