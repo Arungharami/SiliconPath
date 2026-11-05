@@ -2405,3 +2405,218 @@ a.card:hover {
     padding: 17px;
   }
 }
+
+/* Practice track: Logic → CMOS */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.practice-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.practice-summary > div:first-child {
+  flex: 1 1 280px;
+}
+.practice-modules {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.practice-modules .card {
+  height: 100%;
+}
+.practice-ex-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.practice-prompt {
+  font-weight: 600;
+}
+.practice-badge {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--ink);
+}
+.practice-badge.pass {
+  background: var(--lime);
+}
+.practice-badge.todo {
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.practice-table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-variant-numeric: tabular-nums;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.practice-table caption {
+  text-align: left;
+  font-size: 13px;
+  color: var(--muted);
+  padding-bottom: 6px;
+}
+.practice-table th,
+.practice-table td {
+  border: 1px solid var(--line);
+  padding: 5px 12px;
+  text-align: center;
+}
+.practice-table th {
+  background: var(--paper);
+}
+.practice-row-bad td {
+  background: #fbe9e4;
+}
+.practice-bit {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid var(--teal);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+.practice-bit[aria-pressed="true"] {
+  background: var(--teal);
+  color: var(--white);
+}
+.practice-label {
+  display: block;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+.practice-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 10px 12px;
+  border: 1px solid #8a968f;
+  border-radius: 6px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 16px;
+  background: var(--white);
+  color: var(--ink);
+}
+.practice-net {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 16px;
+}
+.practice-ex select {
+  padding: 4px 6px;
+}
+.practice-feedback {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border-left: 4px solid;
+}
+.practice-feedback.ok {
+  background: #eef6df;
+  border-color: var(--teal);
+}
+.practice-feedback.bad {
+  background: #fbefe9;
+  border-color: #a4462c;
+}
+.practice-criteria {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.practice-criteria .ok span[aria-hidden] {
+  color: var(--teal);
+}
+.practice-criteria .bad span[aria-hidden] {
+  color: #a4462c;
+}
+.practice-sim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+.practice-diagram {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  fill: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+.practice-diagram text {
+  fill: var(--ink);
+  stroke: none;
+  font-weight: 700;
+}
+.practice-diagram .pt-p {
+  fill: #fdf3df;
+}
+.practice-diagram .pt-n {
+  fill: #e5f0d3;
+}
+.practice-diagram .pt-bubble {
+  fill: var(--white);
+}
+.practice-diagram .pt-node {
+  fill: var(--ink);
+}
+.practice-diagram .pt-railline {
+  stroke-width: 3;
+}
+.practice-figure {
+  margin: 16px 0;
+}
+.practice-figure figcaption {
+  font-size: 13px;
+  color: var(--muted);
+}
+.practice-objectives {
+  padding-left: 18px;
+  font-size: 14px;
+}
+.practice-pager .btn {
+  white-space: normal;
+  max-width: 100%;
+}
+.practice-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.practice-wrap .split > section,
+.practice-wrap .split > aside {
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .practice-table th,
+  .practice-table td {
+    padding: 4px 6px;
+  }
+}
+.practice-wrap .text-link {
+  white-space: normal;
+}
