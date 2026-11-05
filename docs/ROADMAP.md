@@ -17,8 +17,12 @@ Updated: October 15, 2026. Status describes implemented work separately from pro
 - Inquiry brief and email-draft workflow.
 - Public charter, contribution guide and contributor templates.
 
+## November 5 — Logic → CMOS practice track
+- Five modules, nine auto-checked exercises, switch-level CMOS checker and exportable evidence. See [practice-track.md](practice-track.md).
+- Navigation groups institutional planning pages under "Educators & labs"; no pages removed.
+
 ## Current verification
-November 5, 2026: catalog and syntax checks, 53 Node VM content/logic checks, the static build, and a Chromium browser suite (every route at 1280px and 375px; console/CSP errors, overflow, axe WCAG 2.1 AA serious/critical rules) pass locally and run in CI. Manual screen-reader and cross-browser review remain outstanding.
+November 5, 2026: catalog and syntax checks, 65 Node VM content/logic checks, the static build, and a Chromium browser suite (every route at 1280px and 375px; console/CSP errors, overflow, axe WCAG 2.1 AA serious/critical rules) pass locally and run in CI. Manual screen-reader and cross-browser review remain outstanding.
 
 ## Next — validation and first pilot
 1. Agree a reviewer for one pathway and activity rubric.
@@ -36,6 +40,9 @@ After creation, publish profiles, verify owner access and only then link the con
 
 ## Future — shared learning workflows
 Define privacy, ownership, access and actual learner requirements before building accounts, cohort submissions, shared journals or instructor assessments.
+
+## Next — design workflow track
+Bridge fundamentals to RTL, simulation and synthesis with open-source tools, run locally with reproducible scripts. Requires tool availability checks on Linux, macOS and Windows before committing.
 
 ## Future — research tools
 Consider source-grounded search, clearly labeled simulations and reviewed research modules. AI-generated answers must distinguish reviewed evidence from unreviewed records.

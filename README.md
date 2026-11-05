@@ -21,7 +21,8 @@ Connect credible semiconductor learning with practical planning, digital tools a
 A pathway from curiosity to capability: more learners and institutions developing semiconductor knowledge, supervised practical skills and well-documented projects.
 
 ## What you can use today
-- Six guided learning paths and a curated catalog of 32 starting resources.
+- **Logic → CMOS practice track:** five modules and nine auto-checked exercises, from truth tables to transistor-level CMOS gate design, with an exportable evidence portfolio. See [design notes](docs/practice-track.md).
+- Six guided learning paths and a curated catalog of 35 starting resources.
 - Interactive micro, medium and large conceptual lab models.
 - Equipment guidance, curriculum mapping and user-entered budget scenarios.
 - Operational planning studies, blank documentation templates and downloadable briefs.
@@ -43,7 +44,7 @@ Volunteer availability, deliverables, external costs, permissions and reviewers 
 ## Project status and evidence
 This is a working independent educational platform and a proposed volunteer service initiative. Public commits and source code show what has been implemented; they do not establish accreditation, institutional endorsement or production readiness.
 
-- Automated checks: catalog and syntax validation, 53 Node VM content/logic checks, and a Chromium browser suite covering every route at desktop and 375px width (console/CSP errors, horizontal overflow, axe WCAG 2.1 AA serious/critical rules). All run in CI. Manual screen-reader review has not been performed.
+- Automated checks: catalog and syntax validation, 65 Node VM content/logic checks, and a Chromium browser suite covering every route plus a practice-track learner journey at desktop and 375px width (console/CSP errors, horizontal overflow, axe WCAG 2.1 AA serious/critical rules). All run in CI. Manual screen-reader review has not been performed.
 - Source descriptions summarize listings; full-content and faculty review are pending.
 - Detailed Vivo-related warehouse and volunteer project case studies require exact roles, dates, permitted names and supporting evidence.
 - The maintainer supplied the GitHub organization name SiliconPath-six. Connector access and organization profile publication remain unverified; see the prepared profile and access guide. A dedicated Hugging Face organization is not verified.

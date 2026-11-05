@@ -7,7 +7,8 @@ SiliconPath is a dependency-free static single-page application. There is no bac
 
 ```
 index.html ──loads──▶ lab.js, guides.js, operations.js, packaging.js,
-                      initiative.js, circuit.js, engineering.js  (feature modules)
+                      initiative.js, circuit.js, engineering.js,
+                      practice.js                                  (feature modules)
                       app.js                                       (router + core views, loads last)
 app.js ──fetch──▶ resources.json (source catalog)
 all modules ──▶ localStorage (browser-only learner state; export/restore as JSON)
@@ -24,13 +25,14 @@ all modules ──▶ localStorage (browser-only learner state; export/restore a
 | `initiative.js` | Course concept and future-labs proposal pages | `window.SiliconInitiative` |
 | `circuit.js` | Digital logic gate lab | `window.CircuitLab` |
 | `engineering.js` | Project catalog and code library | `window.EngineeringHub` |
+| `practice.js` | Logic → CMOS practice track: expression parser, switch-level checker, evidence records | `window.PracticeTrack` |
 
 Feature modules expose a `page()` function that returns HTML and a `bind()` function that attaches event handlers after rendering. `app.js` `render()` maps the first segment of `location.hash` to a page function. Hash routing works on any static host without rewrite rules.
 
 ## Data and state
 - `resources.json`: source catalog; validated by `npm run check` (required fields, unique ids, HTTPS URLs, allowed formats and levels, ISO dates). Remote link availability is not checked.
 - Learning paths, projects and lab models are JavaScript data objects inside their modules.
-- `localStorage` keys: `sp-saved`, `sp-completed`, `sp-plan`, `sp-notes`, `siliconpath-pilot-*`, and per-project notes. All reads are wrapped in `try/catch` and fall back to defaults. Data never leaves the browser except through user-initiated file export or an email draft the user sends.
+- `localStorage` keys: `sp-saved`, `sp-completed`, `sp-plan`, `sp-notes`, `sp-practice`, `siliconpath-pilot-*`, and per-project notes. All reads are wrapped in `try/catch` and fall back to defaults. Data never leaves the browser except through user-initiated file export or an email draft the user sends.
 
 ## Build and tooling
 - `scripts/files.mjs` is the single list of shipped files. `build.mjs` copies it to `dist/`, `serve.mjs` serves only those files, `check.mjs` syntax-checks the scripts, and a unit test verifies `index.html` loads exactly those scripts. Adding a module means adding it to `files.mjs` and `index.html`.
