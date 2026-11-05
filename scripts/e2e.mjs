@@ -38,6 +38,12 @@ export const routes = [
   "support",
   "about",
   "workspace",
+  "practice",
+  "practice/boolean",
+  "practice/minimize",
+  "practice/switches",
+  "practice/cmos-gates",
+  "practice/complex-gates",
   "does-not-exist",
 ];
 
@@ -109,9 +115,164 @@ try {
     }
     await page.close();
   }
+  await practiceJourney();
 } finally {
   await browser.close();
   server.kill();
+}
+
+// Learner journey through the practice track: fail, fix, persist, export,
+// back up, clear and restore the evidence record.
+async function practiceJourney() {
+  const expect = (cond, msg) => {
+    checks++;
+    if (!cond) fail(`practice journey: ${msg}`);
+  };
+  const ctx = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    acceptDownloads: true,
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("dialog", (d) => d.accept());
+  const text = async (sel) =>
+    (await page.locator(sel).first().textContent()) || "";
+  const download = async (click) => {
+    const [d] = await Promise.all([page.waitForEvent("download"), click()]);
+    const chunks = [];
+    for await (const c of await d.createReadStream()) chunks.push(c);
+    return {
+      name: d.suggestedFilename(),
+      body: Buffer.concat(chunks).toString("utf8"),
+    };
+  };
+
+  await page.goto(base + "#practice/cmos-gates");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  const nand = page.locator('[data-exercise="nand2"]');
+  await nand.locator("[data-pun]").fill("A*B");
+  await nand.locator("[data-pdn]").fill("A*B");
+  await nand.locator("[data-check]").click();
+  let result = await nand.locator("[data-result]").textContent();
+  expect(
+    result.includes("Not yet.") && result.includes("Floating"),
+    `wrong NAND not reported as floating: ${result}`,
+  );
+  expect(
+    (await nand.locator("svg.practice-diagram").count()) === 1,
+    "simulation diagram not drawn",
+  );
+  expect(
+    (await nand.locator(".practice-row-bad").count()) === 2,
+    "expected 2 highlighted failing rows",
+  );
+
+  await page.evaluate(axeSource);
+  const axe = await page.evaluate(() =>
+    window.axe.run(document, {
+      runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+    }),
+  );
+  const serious = axe.violations.filter((v) =>
+    ["serious", "critical"].includes(v.impact),
+  );
+  expect(
+    !serious.length,
+    `axe with results shown: ${serious.map((v) => v.id).join(", ")}`,
+  );
+
+  await nand.locator("[data-pun]").fill("A+B");
+  await nand.locator("[data-pun]").press("Enter");
+  result = await nand.locator("[data-result]").textContent();
+  expect(
+    result.includes("Passed."),
+    `correct NAND not accepted via Enter: ${result}`,
+  );
+  expect(
+    (await nand.locator("[data-badge]").textContent()).includes(
+      "Passed · 2 attempts",
+    ),
+    "badge not updated",
+  );
+  expect(
+    (await text("[data-module-count]")).startsWith("1 of 2"),
+    "module progress not updated",
+  );
+
+  await page.setViewportSize({ width: 375, height: 740 });
+  const over = await page.evaluate(
+    () => document.documentElement.scrollWidth - innerWidth,
+  );
+  expect(over <= 1, `results overflow ${over}px at 375px`);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await page.reload();
+  expect(
+    (
+      await page.locator('[data-exercise="nand2"] [data-badge]').textContent()
+    ).includes("Passed"),
+    "pass did not persist across reload",
+  );
+
+  await page.goto(base + "#practice/boolean");
+  const table = page.locator('[data-exercise="table-abc"]');
+  const want = "01011101";
+  for (let k = 0; k < want.length; k++)
+    if (want[k] === "1") await table.locator(`[data-bit="${k}"]`).click();
+  await table.locator("[data-check]").click();
+  expect(
+    (await table.locator("[data-result]").textContent()).includes("Passed."),
+    "truth table exercise not passed",
+  );
+
+  await page.goto(base + "#practice");
+  expect(
+    (await text(".big-count")) === "2/9",
+    `overview count ${await text(".big-count")}`,
+  );
+  const md = await download(() => page.click("[data-practice-export]"));
+  expect(
+    md.name.endsWith(".md") &&
+      md.body.includes("2 of 9 exercises passed") &&
+      md.body.includes("PUN = A+B; PDN = A*B"),
+    "portfolio export content",
+  );
+
+  await page.goto(base + "#workspace");
+  expect(
+    (await page.locator("aside").textContent()).includes(
+      "2/9 exercises passed",
+    ),
+    "study desk practice summary",
+  );
+  const backup = await download(() => page.click("#export-backup"));
+  const json = JSON.parse(backup.body);
+  expect(
+    Boolean(json.practice?.records?.nand2?.passedAt),
+    "backup lacks practice evidence",
+  );
+
+  await page.evaluate(() => localStorage.removeItem("sp-practice"));
+  await page.goto(base + "#practice");
+  expect((await text(".big-count")) === "0/9", "records not cleared");
+  await page.goto(base + "#workspace");
+  await page.setInputFiles("#import-backup", {
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(backup.body),
+  });
+  await page.waitForTimeout(300);
+  await page.goto(base + "#practice");
+  expect(
+    (await text(".big-count")) === "2/9",
+    "restore did not bring back practice evidence",
+  );
+
+  expect(!errors.length, `console errors: ${errors.join(" | ")}`);
+  await ctx.close();
 }
 
 if (failures.length) {
@@ -120,5 +281,5 @@ if (failures.length) {
   process.exitCode = 1;
 } else
   console.log(
-    `${checks} route renders passed in Chromium (desktop + 375px): no console/CSP errors, no horizontal overflow, one <h1>, no serious/critical axe WCAG 2.1 AA violations.`,
+    `${checks} browser checks passed (route renders in Chromium (desktop + 375px): no console/CSP errors, no horizontal overflow, one <h1>, no serious/critical axe WCAG 2.1 AA violations; plus the practice-track journey).`,
   );

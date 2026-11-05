@@ -127,7 +127,7 @@ check("Unknown path has a return route", () =>
 check("Search finds provider and title", () => {
   node("#search").value = "MIT";
   a.filter();
-  assert.ok(node("#result-count").textContent.startsWith("5 resource"));
+  assert.ok(node("#result-count").textContent.startsWith("7 resource"));
   node("#search").value = "";
 });
 check("Format filter distinguishes papers from reports", () => {
@@ -138,8 +138,8 @@ check("Format filter distinguishes papers from reports", () => {
   node("#kind").value = "";
 });
 check("Combined filters and empty state work", () => {
-  node("#kind").value = "Book";
-  node("#level").value = "Beginner";
+  node("#kind").value = "Video";
+  node("#level").value = "Advanced";
   a.filter();
   assert.ok(node("#resource-grid").innerHTML.includes("No matching"));
   node("#kind").value = "";
@@ -699,6 +699,286 @@ check("Code library distinguishes language and validation status", () => {
   assert.ok(detail.includes("Pseudocode"));
   assert.ok(detail.includes("data-copy-code"));
 });
+vm.runInContext(
+  await readFile(new URL("../practice.js", import.meta.url), "utf8"),
+  context,
+);
+const P = context.window.PracticeTrack;
+const truth = (src, vars) =>
+  Array.from(P.rows(vars), (env) => P.evaluate(P.parse(src, vars), env)).join(
+    "",
+  );
+check(
+  "Practice parser applies NOT > AND > XOR > OR precedence and implicit AND",
+  () => {
+    const V = ["A", "B", "C"];
+    assert.equal(truth("AB'+C", V), truth("(A*(!B))+C", V));
+    assert.equal(truth("A+B*C", V), truth("A+(B·C)", V));
+    assert.notEqual(truth("A+B*C", V), truth("(A+B)*C", V));
+    assert.equal(truth("A^B", ["A", "B"]), "0110");
+    assert.equal(truth("(AB)'", ["A", "B"]), "1110");
+    assert.equal(truth("a b", ["A", "B"]), "0001");
+    assert.equal(truth("A''", ["A"]), "01");
+  },
+);
+check(
+  "Practice parser rejects malformed or out-of-scope input with a message",
+  () => {
+    for (const [src, msg] of [
+      ["", "Enter"],
+      ["A+", "ends too early"],
+      ["(A+B", "Missing"],
+      ["A+E", "not part of this exercise"],
+      ["A$B", "Unexpected character"],
+      ["A)", "Unexpected symbol"],
+      ["A".repeat(201), "under 200"],
+    ])
+      assert.throws(
+        () => P.parse(src, ["A", "B", "C"]),
+        (e) => e.message.includes(msg),
+        src,
+      );
+    assert.throws(
+      () => P.parseNetwork("A'*B", ["A", "B"]),
+      /only use input names/,
+    );
+    assert.throws(
+      () => P.parseNetwork("A^B", ["A", "B"]),
+      /only use input names/,
+    );
+  },
+);
+check("Practice SOP detection and literal counting", () => {
+  const V = ["A", "B", "C"];
+  assert.ok(P.isSop(P.parse("AB+A'C+B'", V)));
+  assert.ok(P.isSop(P.parse("A", V)));
+  assert.ok(!P.isSop(P.parse("A(B+C)", V)));
+  assert.ok(!P.isSop(P.parse("(AB)'+C", V)));
+  assert.ok(!P.isSop(P.parse("A^B", V)));
+  assert.equal(P.literals(P.parse("AB+A'C+B'", V)), 5);
+});
+check(
+  "Switch-level model reports pull-up, pull-down, contention and floating",
+  () => {
+    const n = (s) => P.parseNetwork(s, ["A", "B"]);
+    assert.equal(P.switchLevel(n("A+B"), n("A*B"), { A: 1, B: 1 }).out, 0);
+    assert.equal(P.switchLevel(n("A+B"), n("A*B"), { A: 0, B: 1 }).out, 1);
+    assert.equal(P.switchLevel(n("A+B"), n("A+B"), { A: 0, B: 1 }).out, "X");
+    assert.equal(P.switchLevel(n("A*B"), n("A*B"), { A: 0, B: 1 }).out, "Z");
+  },
+);
+const reference = (ex) =>
+  ex.type === "table"
+    ? truth(ex.ref, ex.vars)
+    : ex.type === "expr"
+      ? ex.ref
+      : ex.type === "inverter"
+        ? "on,off,1|off,on,0"
+        : ex.refNet;
+check("Every practice exercise accepts its reference solution", () => {
+  assert.equal(P.modules.length, 5);
+  assert.equal(P.exercises.length, 9);
+  assert.equal(new Set(P.exercises.map((e) => e.id)).size, 9);
+  for (const ex of P.exercises) {
+    const r = P.check(ex.id, reference(ex));
+    assert.ok(r.pass, `${ex.id}: ${r.feedback}`);
+    assert.ok(r.criteria.length >= 1);
+  }
+});
+check(
+  "CMOS reference networks are mutual duals using the stated transistor budget",
+  () => {
+    for (const ex of P.exercises.filter((e) => e.type === "cmos")) {
+      const pun = P.parseNetwork(ex.refNet.pun, ex.vars),
+        pdn = P.parseNetwork(ex.refNet.pdn, ex.vars);
+      assert.equal(P.literals(pun) + P.literals(pdn), ex.maxTransistors, ex.id);
+      for (const env of P.rows(ex.vars)) {
+        const s = P.switchLevel(pun, pdn, env);
+        assert.ok(s.up !== s.down, `${ex.id} ${JSON.stringify(env)}`);
+      }
+    }
+  },
+);
+check(
+  "Practice checkers reject adversarial wrong answers with specific feedback",
+  () => {
+    const fail = (id, ans, needle) => {
+      const r = P.check(id, ans);
+      assert.ok(!r.pass, `${id} accepted ${JSON.stringify(ans)}`);
+      assert.ok(
+        r.feedback.includes(needle),
+        `${id}: "${r.feedback}" lacks "${needle}"`,
+      );
+      return r;
+    };
+    fail("table-abc", "01011101".replace(/.$/, "0"), "1 row incorrect");
+    fail("table-abc", "0101", "row");
+    fail("alarm", "AB+C", "your expression gives");
+    fail("alarm", "A+", "ends too early");
+    const nonSop = fail("majority-sop", "A(B+C)+BC", "not in sum-of-products");
+    assert.ok(nonSop.criteria.find((c) => c.label.startsWith("Matches")).ok);
+    fail("majority-sop", "AB+AC+BC+ABC", "uses 9 literals");
+    fail("minterms-sop", "A'B'C'+A'BC'+AB'C'+AB'C+ABC'", "literals");
+    fail("inverter-states", "off,on,1|off,on,0", "A = 0");
+    fail("nand2", { pun: "A*B", pdn: "A*B" }, "Floating");
+    fail("nand2", { pun: "A+B", pdn: "A+B" }, "Contention");
+    fail("nand2", { pun: "A'+B", pdn: "A*B" }, "Pull-up network");
+    fail("nor2", { pun: "A*B", pdn: "A+B+A" }, "uses 5 transistors");
+    fail("aoi21", { pun: "A*B+C", pdn: "(A+B)*C" }, "Y should be 0");
+    fail("oai22", { pun: "", pdn: "(A+B)*(C+D)" }, "Enter");
+  },
+);
+check("Literal limits equal the true minimum SOP cost (brute force)", () => {
+  for (const ex of P.exercises.filter((e) => e.maxLiterals)) {
+    const vars = ex.vars,
+      f = truth(ex.ref, vars),
+      envs = Array.from(P.rows(vars));
+    const cubes = [];
+    for (let k = 0; k < 3 ** vars.length; k++) {
+      const spec = vars.map((_, j) => Math.floor(k / 3 ** j) % 3); // 0,1 or 2 = absent
+      const covers = envs.map((env) =>
+        vars.every((v, j) => spec[j] === 2 || env[v] === spec[j]),
+      );
+      if (covers.every((c, i) => !c || f[i] === "1"))
+        cubes.push({ covers, lits: spec.filter((x) => x !== 2).length });
+    }
+    let best = Infinity;
+    const search = (start, chosen, lits) => {
+      if (lits >= best) return;
+      if (envs.every((_, i) => f[i] === "0" || chosen.some((c) => c.covers[i])))
+        return void (best = lits);
+      for (let k = start; k < cubes.length; k++)
+        search(k + 1, [...chosen, cubes[k]], lits + cubes[k].lits);
+    };
+    search(0, [], 0);
+    assert.equal(best, ex.maxLiterals, ex.id);
+  }
+});
+check(
+  "Practice evidence keeps the first pass, counts attempts and survives later mistakes",
+  () => {
+    P.reset();
+    P.submit("nand2", { pun: "A*B", pdn: "A*B" }, "2026-11-01T10:00:00.000Z");
+    const ok = P.submit(
+      "nand2",
+      { pun: "A+B", pdn: "A*B" },
+      "2026-11-01T10:05:00.000Z",
+    );
+    assert.ok(ok.pass && ok.saved);
+    P.submit("nand2", { pun: "A", pdn: "B" }, "2026-11-01T10:09:00.000Z");
+    const r = P.exportState().records.nand2;
+    assert.equal(r.attempts, 3);
+    assert.equal(r.passedAt, "2026-11-01T10:05:00.000Z");
+    assert.equal(r.passAnswer.pun, "A+B");
+    assert.equal(r.answer.pun, "A");
+    assert.deepEqual({ ...P.summary() }, { done: 1, total: 9, attempted: 1 });
+    assert.ok(JSON.parse(memory.get("sp-practice")).records.nand2.passedAt);
+  },
+);
+check(
+  "Practice import recomputes pass status and drops forged or unknown records",
+  () => {
+    P.importState({
+      records: {
+        nor2: {
+          attempts: 1,
+          answer: { pun: "A", pdn: "B" },
+          passAnswer: { pun: "A", pdn: "B" },
+          passedAt: "2026-11-01T00:00:00Z",
+        },
+        alarm: {
+          attempts: 2,
+          answer: "A(B+C)",
+          passAnswer: "A(B+C)",
+          passedAt: "2026-11-02T00:00:00Z",
+        },
+        imaginary: {
+          attempts: 4,
+          answer: "A",
+          passedAt: "2026-11-02T00:00:00Z",
+        },
+        "table-abc": { attempts: -3, answer: "x" },
+        "majority-sop": {
+          attempts: 1,
+          answer: "<img src=x onerror=alert(1)>".repeat(40),
+          passedAt: "not a date",
+        },
+      },
+    });
+    const rec = P.exportState().records;
+    assert.ok(!rec.nor2.passedAt, "forged pass must not survive");
+    assert.equal(rec.alarm.passedAt, "2026-11-02T00:00:00Z");
+    assert.ok(!("imaginary" in rec) && !("table-abc" in rec));
+    assert.ok(
+      rec["majority-sop"].answer.length <= 200 && !rec["majority-sop"].passedAt,
+    );
+    for (const junk of [null, 5, "x", [], { records: 7 }])
+      assert.deepEqual({ ...P.sanitize(junk).records }, {});
+  },
+);
+check(
+  "Practice portfolio discloses the model limit and re-checks recorded answers",
+  () => {
+    P.reset();
+    P.submit("alarm", "A(B+C)", "2026-11-03T09:00:00.000Z");
+    P.submit(
+      "aoi21",
+      { pun: "(A+B)*C", pdn: "A*B" },
+      "2026-11-03T09:10:00.000Z",
+    );
+    const md = P.portfolio((id) => context.window.SiliconResource(id));
+    assert.ok(md.includes("1 of 9 exercises passed"));
+    assert.ok(md.includes("not a circuit simulation"));
+    assert.ok(md.includes("not an assessment, grade or credential"));
+    assert.ok(md.includes("Passing answer: `A(B+C)`"));
+    assert.ok(md.includes("Latest answer: `PUN = (A+B)*C; PDN = A*B`"));
+    assert.ok(md.includes("- [ ] Output matches Y"));
+    assert.ok(
+      md.includes(
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c3/",
+      ),
+    );
+    assert.ok(md.includes("Not attempted."));
+  },
+);
+check(
+  "Practice pages render complete modules with sources, diagrams and escaped answers",
+  () => {
+    P.reset();
+    P.submit("alarm", '"><script>x</script>');
+    for (const m of P.modules) {
+      context.location.hash = "#practice/" + m.id;
+      a.render(false);
+      const h = node("#main").innerHTML;
+      assert.ok(h.includes(`<h1>${m.title.replace("&", "&amp;")}</h1>`), m.id);
+      for (const part of [
+        "Worked example",
+        "Where this is used",
+        "References",
+        "Prerequisites",
+      ])
+        assert.ok(h.includes(part), `${m.id} ${part}`);
+      assert.equal((h.match(/data-check=/g) || []).length, m.exercises.length);
+      assert.ok(!/undefined|NaN/.test(h), m.id);
+      assert.ok(!h.includes("<script>x"), m.id);
+      for (const id of m.sources)
+        assert.ok(
+          catalog.some((r) => r.id === id),
+          id,
+        );
+      if (m.id === "switches" || m.id.includes("gates"))
+        assert.ok(h.includes("Switch-level model"));
+      if (m.diagram)
+        assert.ok(h.includes("pd-title-") && h.includes("<figcaption>"), m.id);
+    }
+    context.location.hash = "#practice";
+    a.render(false);
+    assert.ok(node("#main").innerHTML.includes("Export evidence portfolio"));
+    assert.ok(context.document.title.startsWith("Logic → CMOS practice"));
+    assert.ok(a.deskText().includes("Practice evidence (auto-checked)"));
+    P.reset();
+  },
+);
 const { scripts: manifestScripts, shipped } = await import("./files.mjs");
 const indexHtml = await readFile(
   new URL("../index.html", import.meta.url),

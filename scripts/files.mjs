@@ -9,6 +9,7 @@ export const scripts = [
   "initiative.js",
   "circuit.js",
   "engineering.js",
+  "practice.js",
   "app.js",
 ];
 
