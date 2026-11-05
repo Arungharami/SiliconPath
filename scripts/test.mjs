@@ -1,78 +1,704 @@
-import {readFile} from 'node:fs/promises';import vm from 'node:vm';import assert from 'node:assert/strict';
-const catalog=JSON.parse(await readFile(new URL('../resources.json',import.meta.url),'utf8'));const operationsSource=await readFile(new URL('../operations.js',import.meta.url),'utf8');const guideSource=await readFile(new URL('../guides.js',import.meta.url),'utf8');const labSource=await readFile(new URL('../lab.js',import.meta.url),'utf8');const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
-const nodes=new Map();function node(id){if(!nodes.has(id))nodes.set(id,{value:'',checked:false,textContent:'',innerHTML:'',style:{},addEventListener(){},focus(){}});return nodes.get(id)};
-const memory=new Map();const context=vm.createContext({console,setTimeout,clearTimeout,URL,Blob,location:{hash:'#home'},confirm:()=>true,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},document:{title:'',querySelector:s=>['#main','#toast','#search','#kind','#topic','#level','#only-saved','#result-count','#resource-grid'].includes(s)?node(s):null,querySelectorAll:()=>[],addEventListener(){}},window:{scrollTo(){},addEventListener(){}},fetch:async()=>({ok:true,json:async()=>catalog})});
-vm.runInContext(await readFile(new URL('../packaging.js',import.meta.url),'utf8'),context);vm.runInContext(labSource,context);vm.runInContext(guideSource,context);vm.runInContext(operationsSource,context);vm.runInContext(await readFile(new URL('../initiative.js',import.meta.url),'utf8'),context);vm.runInContext(source+'\n globalThis.api={paths,models,tasks,esc,support,supportBrief,home,library,pathView,planner,about,filter,brief,deskText,budgetSummary,budgetText,cleanBudget,render,getResources:()=>resources,setSaved:v=>saved=v,setPlan:v=>plan=v};',context);await new Promise(r=>setImmediate(r));const a=context.api;
-let checks=0;const check=(name,fn)=>{fn();checks++;console.log('PASS',name)};
-check('Catalog is loaded',()=>assert.equal(a.getResources().length,catalog.length));
-check('HTML values are escaped',()=>assert.equal(a.esc('<script>"&'),'&lt;script&gt;&quot;&amp;'));
-check('Homepage reflects actual catalog count',()=>assert.ok(a.home().includes(`<b>${catalog.length}</b>`)));
-check('Six complete paths have outcomes, prerequisites, and valid source references',()=>{assert.equal(a.paths.length,6);for(const p of a.paths){assert.ok(p.outcome&&p.prereq);assert.equal(p.steps.length,3);for(const s of p.steps)for(const id of s[2])assert.ok(catalog.some(r=>r.id===id),id);assert.ok(p.quiz[2]>=0&&p.quiz[2]<p.quiz[1].length)}});
-check('Every path renders an activity and knowledge check',()=>{for(const p of a.paths){const h=a.pathView(p.id);assert.ok(h.includes('Apply it:'));assert.ok(h.includes('quiz-answer'));assert.ok(h.includes('Self-reported'))}});
-check('Unknown path has a return route',()=>assert.ok(a.pathView('missing').includes('Return home')));
-check('Search finds provider and title',()=>{node('#search').value='MIT';a.filter();assert.ok(node('#result-count').textContent.startsWith('5 resource'));node('#search').value=''});
-check('Format filter distinguishes papers from reports',()=>{node('#kind').value='Paper';a.filter();assert.ok(node('#result-count').textContent.startsWith('1 resource'));assert.ok(!node('#resource-grid').innerHTML.includes('NIST'));node('#kind').value=''});
-check('Combined filters and empty state work',()=>{node('#kind').value='Book';node('#level').value='Beginner';a.filter();assert.ok(node('#resource-grid').innerHTML.includes('No matching'));node('#kind').value='';node('#level').value=''});
-check('Saved-only filter honors reading list',()=>{a.setSaved(['asml-video']);node('#only-saved').checked=true;a.filter();assert.ok(node('#result-count').textContent.startsWith('1 resource'));assert.ok(node('#resource-grid').innerHTML.includes('Nanoland'));node('#only-saved').checked=false});
-check('Each center model produces a distinct export with dependencies',()=>{for(const model of Object.keys(a.models)){a.setPlan({institution:'Example University',audience:'Students',model,cohort:12,tasks:['scope'],notes:'Review equipment access'});const brief=a.brief();assert.ok(brief.includes(a.models[model].name));assert.ok(brief.includes('Facility dependencies'));assert.ok(brief.includes('[x] Define learner'));assert.ok(brief.includes('Review equipment access'))}});
-check('Planner safely renders institution and notes',()=>{a.setPlan({institution:'<script>alert(1)</script>',audience:'Students',model:'testing',cohort:12,tasks:[],notes:'</textarea><script>bad</script>'});const h=a.planner();assert.ok(!h.includes('<script>'));assert.ok(h.includes('&lt;script&gt;'))});
-check('Study export includes sources and review status',()=>{const text=a.deskText();assert.ok(text.includes('https://www.youtube.com/watch?v=Z-E5IUozd7M'));assert.ok(text.includes('review pending'))});
-check('Editorial policy discloses review and credential limits',()=>{const h=a.about();assert.ok(h.includes('faculty review are pending'));assert.ok(h.includes('No institutional affiliation'));assert.ok(h.includes('No login or cloud synchronization'))});
-const lab=context.window.LabStudio;
-check('Lab scale models map to planner models',()=>{for(const s of Object.values(lab.scales))assert.ok(a.models[s.model]);assert.equal(Object.keys(lab.scales).length,3)});
-check('Every station has inputs, outputs, dependencies and valid resources',()=>{assert.equal(lab.stages.length,12);for(const s of lab.stages){assert.ok(s.input&&s.output&&s.dependencies&&s.activity&&s.observe);for(const id of s.sources)assert.ok(catalog.some(r=>r.id===id))}});
-check('Every scale projects finite depth-sorted equipment geometry',()=>{for(const name of Object.keys(lab.scales)){lab.chooseScale(name);const g=lab.geometry();assert.ok(g.faces.length>100);assert.equal(g.marks.length,lab.scales[name].stations.length);for(const f of g.faces){assert.ok(!/NaN|Infinity/.test(f.points));assert.ok(Number.isFinite(f.depth))}for(let i=1;i<g.faces.length;i++)assert.ok(g.faces[i-1].layer<g.faces[i].layer||g.faces[i-1].depth>=g.faces[i].depth)}});
-check('Lab scope distinguishes virtual processes from fabrication',()=>{assert.ok(lab.scales.micro.boundary.includes('No physical fabrication'));assert.ok(lab.scales.medium.boundary.includes('virtual'));assert.ok(lab.scales.large.boundary.includes('not')||lab.scales.large.boundary.includes('Not'))});
-check('Unsupported lab scale is rejected',()=>assert.throws(()=>lab.chooseScale('unknown')));
-check('Authorship remains independent without mentor attribution',()=>{const h=a.about();assert.ok(!h.includes('Mentor:'));assert.ok(!h.includes('Larrondo-Petrie'));assert.ok(h.includes('Arun Kumar Gharami ↗'))});
-const guides=context.window.SiliconGuides;
-check('Equipment records connect valid sources and study paths',()=>{assert.equal(guides.equipment.length,9);for(const e of guides.equipment){assert.ok(a.paths.some(p=>p.id===e.path));assert.ok(e.skill&&e.selection&&e.dependencies&&e.costs);for(const id of e.sources)assert.ok(catalog.some(r=>r.id===id));for(const s of e.scales)assert.ok(lab.scales[s])}});
-check('Curriculum maps connect outcomes, outputs and rubric criteria',()=>{assert.equal(guides.modules.length,6);for(const m of guides.modules){assert.ok(a.paths.some(p=>p.id===m[0]));assert.ok(m[2]&&m[3]&&m[4])}});
-check('Partial budget totals count entered categories only',()=>{a.setPlan({budget:{purchase:1000,installation:'',software:125,service:'',consumables:'',staff:''}});const t=a.budgetSummary();assert.equal(t.one,1000);assert.equal(t.annual,125);assert.equal(t.first,1125);assert.equal(t.count,2);assert.ok(a.budgetText().includes('installation: Not specified'))});
-check('Budget cleaning rejects non-finite inputs and preserves zero quotes',()=>{const b=a.cleanBudget({purchase:'Infinity',installation:-25,software:0,staff:'bad',notes:'Quote reference'});assert.equal(b.purchase,'');assert.equal(b.installation,0);assert.equal(b.software,0);assert.equal(b.staff,'');assert.equal(b.notes,'Quote reference')});
-check('Faculty brief includes quote sources and explicit budget exclusions',()=>{a.setPlan({institution:'Example',audience:'Students',model:'digital',cohort:10,tasks:[],notes:'',budget:{purchase:500,notes:'Supplier quote, October 8'}});const b=a.brief();assert.ok(b.includes('500.00'));assert.ok(b.includes('Supplier quote, October 8'));assert.ok(b.includes('not a complete budget'))});
-check('New decision pages render with working routes',()=>{for(const name of ['start','equipment','faculty']){context.location.hash='#'+name;a.render(false);assert.ok(!node('#main').innerHTML.includes('Page not found'));assert.ok(node('#main').innerHTML.length>1000)}});
-const ops=context.window.LabOperations;
-check('Every lab scale has setup phases, inputs, outputs and scope limits',()=>{for(const [id,c] of Object.entries(ops.configs)){assert.ok(lab.scales[id]);assert.ok(c.input&&c.output&&c.limit);assert.ok(c.phases.length>=5);for(const p of c.phases){assert.ok(p[3]);assert.ok(ops.docs.some(d=>d[0]===p[2]))}}});
-check('Document pack contains sixteen blank accountable templates',()=>{assert.equal(ops.docs.length,16);const text=ops.templates('micro');assert.ok(text.includes('Blank planning templates'));assert.ok(text.includes('Suggested owner:'));assert.ok(text.includes('Restart / return-to-service checklist'))});
-check('Setup estimates sum phase assumptions and calculate dates correctly',()=>{assert.equal(ops.totals('micro').weeks,6);assert.equal(ops.totals('medium').weeks,17);assert.equal(ops.totals('large').weeks,60);assert.equal(ops.finishDate('2026-10-08',6),'2026-11-19');assert.equal(ops.finishDate('2026-02-30',6),'')});
-check('Unknown operational costs remain unspecified in study export',()=>{const t=ops.totals('micro');assert.equal(t.count,0);const text=ops.report('micro');assert.ok(text.includes('Quote required'));assert.ok(text.includes('not a complete budget'));assert.ok(text.includes('Not confirmed lead times'))});
-check('Cost and time scenarios remain separate by scale',()=>{ops.scenario('micro').costs.purchase=250;ops.scenario('micro').weeks[0]=3;assert.equal(ops.totals('micro').one,250);assert.equal(ops.totals('medium').one,0);assert.equal(ops.totals('micro').weeks,8);assert.equal(ops.totals('medium').weeks,17)});
-check('Every 3D lab has a projected process route between its stations',()=>{for(const name of Object.keys(lab.scales)){lab.chooseScale(name);const g=lab.geometry();assert.equal(g.connections.length,lab.scales[name].stations.length-1);for(const c of g.connections){assert.ok(Number.isFinite(c.a.x)&&Number.isFinite(c.b.y));assert.equal(c.arrow.length,3)}}});
-check('Exact faculty-discussion credit appears on About',()=>assert.ok(a.about().includes('Independent educational project · Prepared for faculty discussion,')));
-check('Project support distinguishes proposed faculty participation from confirmed services',()=>{const h=a.support();assert.ok(h.includes('no professor consulting service or availability is confirmed'));assert.ok(h.includes('does not send a request'));assert.ok(h.includes('VOLUNTARY CONTRIBUTIONS'));context.location.hash='#support';a.render(false);assert.ok(node('#main').innerHTML.includes('support-form'))});
-check('Hybrid brief preserves inputs and agreement boundaries',()=>{const b=a.supportBrief({project:'Device testing pilot',mode:'voluntary',goal:'A measurement worksheet',task:'Check references'});assert.ok(b.includes('Voluntary contribution proposal'));assert.ok(b.includes('Device testing pilot'));assert.ok(b.includes('Check references'));assert.ok(b.includes('no faculty availability is confirmed'));assert.ok(b.includes('not a submitted request'));assert.ok(b.includes('No institutional affiliation'))});
-const pilot=context.window.PackagingPilot;
-check('All five pilot routes render objectives, sources and activities',()=>{assert.equal(pilot.modules.length,5);for(const m of pilot.modules){context.location.hash='#packaging/'+m.id;a.render(false);const h=node('#main').innerHTML;assert.ok(h.includes(m.title));assert.ok(h.includes('pilot-scene'));assert.ok(h.includes('pilot-notes'));assert.ok(h.includes('Not to scale'));assert.ok(h.includes('rel="noopener noreferrer"'));}});
-check('Both model modes produce finite geometry across control limits',()=>{for(const m of pilot.modules)for(const mode of ['primary','alternate'])for(const e of [0,1]){const g=pilot.geometry(m.id,mode,e);assert.ok(g.boxes.length>=3);for(const b of g.boxes)for(const k of ['x','y','z','w','d','h'])assert.ok(Number.isFinite(b[k]));for(const angle of [-180,0,180]){const svg=pilot.scene(m.id,mode,e,angle,true);assert.ok(!svg.includes('NaN'));assert.ok(svg.includes('<desc'));}}});
-check('Layer separation moves top components and comparison changes interconnects',()=>{assert.ok(pilot.geometry('die-package-pcb','primary',1).boxes.at(-1).z>pilot.geometry('die-package-pcb','primary',0).boxes.at(-1).z);assert.ok(pilot.geometry('wire-bond-flip-chip','primary',0).lines.length>0);assert.ok(pilot.geometry('wire-bond-flip-chip','alternate',0).boxes.some(b=>b.name==='Connection bump'));});
-check('Unknown pilot route falls back and exported notes disclose evidence limits',()=>{assert.ok(pilot.page('unknown').includes('Die → package → PCB'));const r=pilot.report(pilot.modules[0],'Learner observation');assert.ok(r.includes('Learner observation'));assert.ok(r.includes('No measured device data'));assert.ok(r.includes('https://www.ti.com/'));});
-check('Pilot controls redraw, reset, save notes, export and provide answer feedback',()=>{
- const listeners=new Map(),controls=new Map();
- const make=(id,value='',checked=false)=>{const n={value,checked,innerHTML:'',textContent:'',addEventListener:(event,fn)=>listeners.set(id+':'+event,fn)};controls.set('#'+id,n);return n};
- const angle=make('pilot-angle','30'),explode=make('pilot-explode','35'),labels=make('pilot-labels','',true),mode=make('pilot-mode','primary'),notes=make('pilot-notes');
- for(const id of ['pilot-scene','pilot-components','pilot-angle-value','pilot-explode-value','pilot-reset','pilot-save-status','pilot-export','pilot-answer','pilot-check','pilot-feedback'])make(id);
- const old=context.document.querySelector;context.document.querySelector=s=>s==='[data-pilot]'?{dataset:{pilot:'wire-bond-flip-chip'}}:controls.get(s)||null;
- let exported;context.CustomEvent=class{constructor(type,options){this.type=type;this.detail=options.detail}};context.window.dispatchEvent=e=>exported=e;
- try{pilot.bind();mode.value='alternate';listeners.get('pilot-mode:input')();assert.ok(controls.get('#pilot-components').innerHTML.includes('Connection bump'));angle.value='180';explode.value='100';listeners.get('pilot-explode:input')();assert.equal(controls.get('#pilot-angle-value').textContent,'180°');listeners.get('pilot-reset:click')();assert.equal(mode.value,'primary');assert.equal(angle.value,30);notes.value='Comparison observation';listeners.get('pilot-notes:input')();assert.equal(memory.get('siliconpath-pilot-wire-bond-flip-chip'),'Comparison observation');listeners.get('pilot-export:click')();assert.equal(exported.type,'siliconpath-export');assert.ok(exported.detail.text.includes('Comparison observation'));controls.get('#pilot-answer').value='Flip-chip';listeners.get('pilot-check:click')();assert.ok(controls.get('#pilot-feedback').textContent.startsWith('Correct.'));controls.get('#pilot-answer').value='';listeners.get('pilot-check:click')();assert.equal(controls.get('#pilot-feedback').textContent,'Choose an answer first.');}finally{context.document.querySelector=old;}
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
+import assert from "node:assert/strict";
+const catalog = JSON.parse(
+  await readFile(new URL("../resources.json", import.meta.url), "utf8"),
+);
+const operationsSource = await readFile(
+  new URL("../operations.js", import.meta.url),
+  "utf8",
+);
+const guideSource = await readFile(
+  new URL("../guides.js", import.meta.url),
+  "utf8",
+);
+const labSource = await readFile(new URL("../lab.js", import.meta.url), "utf8");
+const source = await readFile(new URL("../app.js", import.meta.url), "utf8");
+const nodes = new Map();
+function node(id) {
+  if (!nodes.has(id))
+    nodes.set(id, {
+      value: "",
+      checked: false,
+      textContent: "",
+      innerHTML: "",
+      style: {},
+      addEventListener() {},
+      focus() {},
+    });
+  return nodes.get(id);
+}
+const memory = new Map();
+const context = vm.createContext({
+  console,
+  setTimeout,
+  clearTimeout,
+  URL,
+  Blob,
+  location: { hash: "#home" },
+  confirm: () => true,
+  localStorage: {
+    getItem: (k) => memory.get(k) || null,
+    setItem: (k, v) => memory.set(k, v),
+  },
+  document: {
+    title: "",
+    querySelector: (s) =>
+      [
+        "#main",
+        "#toast",
+        "#search",
+        "#kind",
+        "#topic",
+        "#level",
+        "#only-saved",
+        "#result-count",
+        "#resource-grid",
+      ].includes(s)
+        ? node(s)
+        : null,
+    querySelectorAll: () => [],
+    addEventListener() {},
+  },
+  window: { scrollTo() {}, addEventListener() {} },
+  fetch: async () => ({ ok: true, json: async () => catalog }),
+});
+vm.runInContext(
+  await readFile(new URL("../packaging.js", import.meta.url), "utf8"),
+  context,
+);
+vm.runInContext(labSource, context);
+vm.runInContext(guideSource, context);
+vm.runInContext(operationsSource, context);
+vm.runInContext(
+  await readFile(new URL("../initiative.js", import.meta.url), "utf8"),
+  context,
+);
+vm.runInContext(
+  source +
+    "\n globalThis.api={paths,models,tasks,esc,support,supportBrief,home,library,pathView,planner,about,filter,brief,deskText,budgetSummary,budgetText,cleanBudget,render,getResources:()=>resources,setSaved:v=>saved=v,setPlan:v=>plan=v};",
+  context,
+);
+await new Promise((r) => setImmediate(r));
+const a = context.api;
+let checks = 0;
+const check = (name, fn) => {
+  fn();
+  checks++;
+  console.log("PASS", name);
+};
+check("Catalog is loaded", () =>
+  assert.equal(a.getResources().length, catalog.length),
+);
+check("HTML values are escaped", () =>
+  assert.equal(a.esc('<script>"&'), "&lt;script&gt;&quot;&amp;"),
+);
+check("Homepage reflects actual catalog count", () =>
+  assert.ok(a.home().includes(`<b>${catalog.length}</b>`)),
+);
+check(
+  "Six complete paths have outcomes, prerequisites, and valid source references",
+  () => {
+    assert.equal(a.paths.length, 6);
+    for (const p of a.paths) {
+      assert.ok(p.outcome && p.prereq);
+      assert.equal(p.steps.length, 3);
+      for (const s of p.steps)
+        for (const id of s[2])
+          assert.ok(
+            catalog.some((r) => r.id === id),
+            id,
+          );
+      assert.ok(p.quiz[2] >= 0 && p.quiz[2] < p.quiz[1].length);
+    }
+  },
+);
+check("Every path renders an activity and knowledge check", () => {
+  for (const p of a.paths) {
+    const h = a.pathView(p.id);
+    assert.ok(h.includes("Apply it:"));
+    assert.ok(h.includes("quiz-answer"));
+    assert.ok(h.includes("Self-reported"));
+  }
+});
+check("Unknown path has a return route", () =>
+  assert.ok(a.pathView("missing").includes("Return home")),
+);
+check("Search finds provider and title", () => {
+  node("#search").value = "MIT";
+  a.filter();
+  assert.ok(node("#result-count").textContent.startsWith("5 resource"));
+  node("#search").value = "";
+});
+check("Format filter distinguishes papers from reports", () => {
+  node("#kind").value = "Paper";
+  a.filter();
+  assert.ok(node("#result-count").textContent.startsWith("1 resource"));
+  assert.ok(!node("#resource-grid").innerHTML.includes("NIST"));
+  node("#kind").value = "";
+});
+check("Combined filters and empty state work", () => {
+  node("#kind").value = "Book";
+  node("#level").value = "Beginner";
+  a.filter();
+  assert.ok(node("#resource-grid").innerHTML.includes("No matching"));
+  node("#kind").value = "";
+  node("#level").value = "";
+});
+check("Saved-only filter honors reading list", () => {
+  a.setSaved(["asml-video"]);
+  node("#only-saved").checked = true;
+  a.filter();
+  assert.ok(node("#result-count").textContent.startsWith("1 resource"));
+  assert.ok(node("#resource-grid").innerHTML.includes("Nanoland"));
+  node("#only-saved").checked = false;
+});
+check("Each center model produces a distinct export with dependencies", () => {
+  for (const model of Object.keys(a.models)) {
+    a.setPlan({
+      institution: "Example University",
+      audience: "Students",
+      model,
+      cohort: 12,
+      tasks: ["scope"],
+      notes: "Review equipment access",
+    });
+    const brief = a.brief();
+    assert.ok(brief.includes(a.models[model].name));
+    assert.ok(brief.includes("Facility dependencies"));
+    assert.ok(brief.includes("[x] Define learner"));
+    assert.ok(brief.includes("Review equipment access"));
+  }
+});
+check("Planner safely renders institution and notes", () => {
+  a.setPlan({
+    institution: "<script>alert(1)</script>",
+    audience: "Students",
+    model: "testing",
+    cohort: 12,
+    tasks: [],
+    notes: "</textarea><script>bad</script>",
+  });
+  const h = a.planner();
+  assert.ok(!h.includes("<script>"));
+  assert.ok(h.includes("&lt;script&gt;"));
+});
+check("Study export includes sources and review status", () => {
+  const text = a.deskText();
+  assert.ok(text.includes("https://www.youtube.com/watch?v=Z-E5IUozd7M"));
+  assert.ok(text.includes("review pending"));
+});
+check("Editorial policy discloses review and credential limits", () => {
+  const h = a.about();
+  assert.ok(h.includes("faculty review are pending"));
+  assert.ok(h.includes("No institutional affiliation"));
+  assert.ok(h.includes("No login or cloud synchronization"));
+});
+const lab = context.window.LabStudio;
+check("Lab scale models map to planner models", () => {
+  for (const s of Object.values(lab.scales)) assert.ok(a.models[s.model]);
+  assert.equal(Object.keys(lab.scales).length, 3);
+});
+check(
+  "Every station has inputs, outputs, dependencies and valid resources",
+  () => {
+    assert.equal(lab.stages.length, 12);
+    for (const s of lab.stages) {
+      assert.ok(
+        s.input && s.output && s.dependencies && s.activity && s.observe,
+      );
+      for (const id of s.sources) assert.ok(catalog.some((r) => r.id === id));
+    }
+  },
+);
+check("Every scale projects finite depth-sorted equipment geometry", () => {
+  for (const name of Object.keys(lab.scales)) {
+    lab.chooseScale(name);
+    const g = lab.geometry();
+    assert.ok(g.faces.length > 100);
+    assert.equal(g.marks.length, lab.scales[name].stations.length);
+    for (const f of g.faces) {
+      assert.ok(!/NaN|Infinity/.test(f.points));
+      assert.ok(Number.isFinite(f.depth));
+    }
+    for (let i = 1; i < g.faces.length; i++)
+      assert.ok(
+        g.faces[i - 1].layer < g.faces[i].layer ||
+          g.faces[i - 1].depth >= g.faces[i].depth,
+      );
+  }
+});
+check("Lab scope distinguishes virtual processes from fabrication", () => {
+  assert.ok(lab.scales.micro.boundary.includes("No physical fabrication"));
+  assert.ok(lab.scales.medium.boundary.includes("virtual"));
+  assert.ok(
+    lab.scales.large.boundary.includes("not") ||
+      lab.scales.large.boundary.includes("Not"),
+  );
+});
+check("Unsupported lab scale is rejected", () =>
+  assert.throws(() => lab.chooseScale("unknown")),
+);
+check("Authorship remains independent without mentor attribution", () => {
+  const h = a.about();
+  assert.ok(!h.includes("Mentor:"));
+  assert.ok(!h.includes("Larrondo-Petrie"));
+  assert.ok(h.includes("Arun Kumar Gharami ↗"));
+});
+const guides = context.window.SiliconGuides;
+check("Equipment records connect valid sources and study paths", () => {
+  assert.equal(guides.equipment.length, 9);
+  for (const e of guides.equipment) {
+    assert.ok(a.paths.some((p) => p.id === e.path));
+    assert.ok(e.skill && e.selection && e.dependencies && e.costs);
+    for (const id of e.sources) assert.ok(catalog.some((r) => r.id === id));
+    for (const s of e.scales) assert.ok(lab.scales[s]);
+  }
+});
+check("Curriculum maps connect outcomes, outputs and rubric criteria", () => {
+  assert.equal(guides.modules.length, 6);
+  for (const m of guides.modules) {
+    assert.ok(a.paths.some((p) => p.id === m[0]));
+    assert.ok(m[2] && m[3] && m[4]);
+  }
+});
+check("Partial budget totals count entered categories only", () => {
+  a.setPlan({
+    budget: {
+      purchase: 1000,
+      installation: "",
+      software: 125,
+      service: "",
+      consumables: "",
+      staff: "",
+    },
+  });
+  const t = a.budgetSummary();
+  assert.equal(t.one, 1000);
+  assert.equal(t.annual, 125);
+  assert.equal(t.first, 1125);
+  assert.equal(t.count, 2);
+  assert.ok(a.budgetText().includes("installation: Not specified"));
+});
+check(
+  "Budget cleaning rejects non-finite inputs and preserves zero quotes",
+  () => {
+    const b = a.cleanBudget({
+      purchase: "Infinity",
+      installation: -25,
+      software: 0,
+      staff: "bad",
+      notes: "Quote reference",
+    });
+    assert.equal(b.purchase, "");
+    assert.equal(b.installation, 0);
+    assert.equal(b.software, 0);
+    assert.equal(b.staff, "");
+    assert.equal(b.notes, "Quote reference");
+  },
+);
+check(
+  "Faculty brief includes quote sources and explicit budget exclusions",
+  () => {
+    a.setPlan({
+      institution: "Example",
+      audience: "Students",
+      model: "digital",
+      cohort: 10,
+      tasks: [],
+      notes: "",
+      budget: { purchase: 500, notes: "Supplier quote, October 8" },
+    });
+    const b = a.brief();
+    assert.ok(b.includes("500.00"));
+    assert.ok(b.includes("Supplier quote, October 8"));
+    assert.ok(b.includes("not a complete budget"));
+  },
+);
+check("New decision pages render with working routes", () => {
+  for (const name of ["start", "equipment", "faculty"]) {
+    context.location.hash = "#" + name;
+    a.render(false);
+    assert.ok(!node("#main").innerHTML.includes("Page not found"));
+    assert.ok(node("#main").innerHTML.length > 1000);
+  }
+});
+const ops = context.window.LabOperations;
+check(
+  "Every lab scale has setup phases, inputs, outputs and scope limits",
+  () => {
+    for (const [id, c] of Object.entries(ops.configs)) {
+      assert.ok(lab.scales[id]);
+      assert.ok(c.input && c.output && c.limit);
+      assert.ok(c.phases.length >= 5);
+      for (const p of c.phases) {
+        assert.ok(p[3]);
+        assert.ok(ops.docs.some((d) => d[0] === p[2]));
+      }
+    }
+  },
+);
+check("Document pack contains sixteen blank accountable templates", () => {
+  assert.equal(ops.docs.length, 16);
+  const text = ops.templates("micro");
+  assert.ok(text.includes("Blank planning templates"));
+  assert.ok(text.includes("Suggested owner:"));
+  assert.ok(text.includes("Restart / return-to-service checklist"));
+});
+check(
+  "Setup estimates sum phase assumptions and calculate dates correctly",
+  () => {
+    assert.equal(ops.totals("micro").weeks, 6);
+    assert.equal(ops.totals("medium").weeks, 17);
+    assert.equal(ops.totals("large").weeks, 60);
+    assert.equal(ops.finishDate("2026-10-08", 6), "2026-11-19");
+    assert.equal(ops.finishDate("2026-02-30", 6), "");
+  },
+);
+check("Unknown operational costs remain unspecified in study export", () => {
+  const t = ops.totals("micro");
+  assert.equal(t.count, 0);
+  const text = ops.report("micro");
+  assert.ok(text.includes("Quote required"));
+  assert.ok(text.includes("not a complete budget"));
+  assert.ok(text.includes("Not confirmed lead times"));
+});
+check("Cost and time scenarios remain separate by scale", () => {
+  ops.scenario("micro").costs.purchase = 250;
+  ops.scenario("micro").weeks[0] = 3;
+  assert.equal(ops.totals("micro").one, 250);
+  assert.equal(ops.totals("medium").one, 0);
+  assert.equal(ops.totals("micro").weeks, 8);
+  assert.equal(ops.totals("medium").weeks, 17);
+});
+check("Every 3D lab has a projected process route between its stations", () => {
+  for (const name of Object.keys(lab.scales)) {
+    lab.chooseScale(name);
+    const g = lab.geometry();
+    assert.equal(g.connections.length, lab.scales[name].stations.length - 1);
+    for (const c of g.connections) {
+      assert.ok(Number.isFinite(c.a.x) && Number.isFinite(c.b.y));
+      assert.equal(c.arrow.length, 3);
+    }
+  }
+});
+check("Exact faculty-discussion credit appears on About", () =>
+  assert.ok(
+    a
+      .about()
+      .includes(
+        "Independent educational project · Prepared for faculty discussion,",
+      ),
+  ),
+);
+check(
+  "Project support distinguishes proposed faculty participation from confirmed services",
+  () => {
+    const h = a.support();
+    assert.ok(
+      h.includes(
+        "no professor consulting service or availability is confirmed",
+      ),
+    );
+    assert.ok(h.includes("does not send a request"));
+    assert.ok(h.includes("VOLUNTARY CONTRIBUTIONS"));
+    context.location.hash = "#support";
+    a.render(false);
+    assert.ok(node("#main").innerHTML.includes("support-form"));
+  },
+);
+check("Hybrid brief preserves inputs and agreement boundaries", () => {
+  const b = a.supportBrief({
+    project: "Device testing pilot",
+    mode: "voluntary",
+    goal: "A measurement worksheet",
+    task: "Check references",
+  });
+  assert.ok(b.includes("Voluntary contribution proposal"));
+  assert.ok(b.includes("Device testing pilot"));
+  assert.ok(b.includes("Check references"));
+  assert.ok(b.includes("no faculty availability is confirmed"));
+  assert.ok(b.includes("not a submitted request"));
+  assert.ok(b.includes("No institutional affiliation"));
+});
+const pilot = context.window.PackagingPilot;
+check("All five pilot routes render objectives, sources and activities", () => {
+  assert.equal(pilot.modules.length, 5);
+  for (const m of pilot.modules) {
+    context.location.hash = "#packaging/" + m.id;
+    a.render(false);
+    const h = node("#main").innerHTML;
+    assert.ok(h.includes(m.title));
+    assert.ok(h.includes("pilot-scene"));
+    assert.ok(h.includes("pilot-notes"));
+    assert.ok(h.includes("Not to scale"));
+    assert.ok(h.includes('rel="noopener noreferrer"'));
+  }
+});
+check("Both model modes produce finite geometry across control limits", () => {
+  for (const m of pilot.modules)
+    for (const mode of ["primary", "alternate"])
+      for (const e of [0, 1]) {
+        const g = pilot.geometry(m.id, mode, e);
+        assert.ok(g.boxes.length >= 3);
+        for (const b of g.boxes)
+          for (const k of ["x", "y", "z", "w", "d", "h"])
+            assert.ok(Number.isFinite(b[k]));
+        for (const angle of [-180, 0, 180]) {
+          const svg = pilot.scene(m.id, mode, e, angle, true);
+          assert.ok(!svg.includes("NaN"));
+          assert.ok(svg.includes("<desc"));
+        }
+      }
+});
+check(
+  "Layer separation moves top components and comparison changes interconnects",
+  () => {
+    assert.ok(
+      pilot.geometry("die-package-pcb", "primary", 1).boxes.at(-1).z >
+        pilot.geometry("die-package-pcb", "primary", 0).boxes.at(-1).z,
+    );
+    assert.ok(
+      pilot.geometry("wire-bond-flip-chip", "primary", 0).lines.length > 0,
+    );
+    assert.ok(
+      pilot
+        .geometry("wire-bond-flip-chip", "alternate", 0)
+        .boxes.some((b) => b.name === "Connection bump"),
+    );
+  },
+);
+check(
+  "Unknown pilot route falls back and exported notes disclose evidence limits",
+  () => {
+    assert.ok(pilot.page("unknown").includes("Die → package → PCB"));
+    const r = pilot.report(pilot.modules[0], "Learner observation");
+    assert.ok(r.includes("Learner observation"));
+    assert.ok(r.includes("No measured device data"));
+    assert.ok(r.includes("https://www.ti.com/"));
+  },
+);
+check(
+  "Pilot controls redraw, reset, save notes, export and provide answer feedback",
+  () => {
+    const listeners = new Map(),
+      controls = new Map();
+    const make = (id, value = "", checked = false) => {
+      const n = {
+        value,
+        checked,
+        innerHTML: "",
+        textContent: "",
+        addEventListener: (event, fn) => listeners.set(id + ":" + event, fn),
+      };
+      controls.set("#" + id, n);
+      return n;
+    };
+    const angle = make("pilot-angle", "30"),
+      explode = make("pilot-explode", "35"),
+      labels = make("pilot-labels", "", true),
+      mode = make("pilot-mode", "primary"),
+      notes = make("pilot-notes");
+    for (const id of [
+      "pilot-scene",
+      "pilot-components",
+      "pilot-angle-value",
+      "pilot-explode-value",
+      "pilot-reset",
+      "pilot-save-status",
+      "pilot-export",
+      "pilot-answer",
+      "pilot-check",
+      "pilot-feedback",
+    ])
+      make(id);
+    const old = context.document.querySelector;
+    context.document.querySelector = (s) =>
+      s === "[data-pilot]"
+        ? { dataset: { pilot: "wire-bond-flip-chip" } }
+        : controls.get(s) || null;
+    let exported;
+    context.CustomEvent = class {
+      constructor(type, options) {
+        this.type = type;
+        this.detail = options.detail;
+      }
+    };
+    context.window.dispatchEvent = (e) => (exported = e);
+    try {
+      pilot.bind();
+      mode.value = "alternate";
+      listeners.get("pilot-mode:input")();
+      assert.ok(
+        controls.get("#pilot-components").innerHTML.includes("Connection bump"),
+      );
+      angle.value = "180";
+      explode.value = "100";
+      listeners.get("pilot-explode:input")();
+      assert.equal(controls.get("#pilot-angle-value").textContent, "180°");
+      listeners.get("pilot-reset:click")();
+      assert.equal(mode.value, "primary");
+      assert.equal(angle.value, 30);
+      notes.value = "Comparison observation";
+      listeners.get("pilot-notes:input")();
+      assert.equal(
+        memory.get("siliconpath-pilot-wire-bond-flip-chip"),
+        "Comparison observation",
+      );
+      listeners.get("pilot-export:click")();
+      assert.equal(exported.type, "siliconpath-export");
+      assert.ok(exported.detail.text.includes("Comparison observation"));
+      controls.get("#pilot-answer").value = "Flip-chip";
+      listeners.get("pilot-check:click")();
+      assert.ok(
+        controls.get("#pilot-feedback").textContent.startsWith("Correct."),
+      );
+      controls.get("#pilot-answer").value = "";
+      listeners.get("pilot-check:click")();
+      assert.equal(
+        controls.get("#pilot-feedback").textContent,
+        "Choose an answer first.",
+      );
+    } finally {
+      context.document.querySelector = old;
+    }
+  },
+);
+
+check("Course and lab routes render distinct plans", () => {
+  for (const track of ["course", "labs"]) {
+    context.location.hash = "#initiative/" + track;
+    a.render(false);
+    const h = node("#main").innerHTML;
+    assert.ok(h.includes("PROPOSAL FOR REVIEW"));
+    assert.ok(
+      h.includes(
+        track === "course"
+          ? "Illustrative eight-block teaching sequence"
+          : "Sensor-to-System",
+      ),
+    );
+    assert.ok(context.document.title.includes("Course concept"));
+  }
+});
+check(
+  "Course export distinguishes proposal, capabilities and assessment",
+  () => {
+    const t = context.window.SiliconInitiative.brief();
+    assert.ok(t.includes("not a verified faculty-approved syllabus"));
+    assert.ok(t.includes("cloud synchronization are future"));
+    assert.ok(t.includes("20% learning evidence"));
+    assert.equal(context.window.SiliconInitiative.modules.length, 8);
+    assert.ok(
+      context.window.SiliconInitiative.brief("labs").includes(
+        "Focus: SiliconPath future labs",
+      ),
+    );
+  },
+);
+check("Course page is discoverable and its module is shipped", () => {
+  assert.ok(a.home().includes('href="#initiative"'));
 });
 
-
-
-check('Course and lab routes render distinct plans',()=>{for(const track of ['course','labs']){context.location.hash='#initiative/'+track;a.render(false);const h=node('#main').innerHTML;assert.ok(h.includes('PROPOSAL FOR REVIEW'));assert.ok(h.includes(track==='course'?'Illustrative eight-block teaching sequence':'Sensor-to-System'));assert.ok(context.document.title.includes('Course concept'));}});
-check('Course export distinguishes proposal, capabilities and assessment',()=>{const t=context.window.SiliconInitiative.brief();assert.ok(t.includes('not a verified faculty-approved syllabus'));assert.ok(t.includes('cloud synchronization are future'));assert.ok(t.includes('20% learning evidence'));assert.equal(context.window.SiliconInitiative.modules.length,8);assert.ok(context.window.SiliconInitiative.brief('labs').includes('Focus: SiliconPath future labs'));});
-check('Course page is discoverable and its module is shipped',()=>{assert.ok(a.home().includes('href="#initiative"'));});
-
-vm.runInContext(await readFile(new URL('../circuit.js',import.meta.url),'utf8'),context);
-const circuit=context.window.CircuitLab;
-check('Digital circuit lab defines all seven standard gates',()=>assert.deepEqual(Object.keys(circuit.gates),['AND','OR','NOT','NAND','NOR','XOR','XNOR']));
-check('Digital logic truth tables are correct',()=>{const expected={AND:[0,0,0,1],OR:[0,1,1,1],NAND:[1,1,1,0],NOR:[1,0,0,0],XOR:[0,1,1,0],XNOR:[1,0,0,1]};for(const [gate,values] of Object.entries(expected))assert.deepEqual(Array.from(circuit.truthTable(gate),r=>r.y),values,gate);assert.deepEqual(Array.from(circuit.truthTable('NOT'),r=>r.y),[1,0]);});
-check('Digital circuit lab rejects invalid gates and non-binary inputs',()=>{assert.throws(()=>circuit.output('IMAGINARY',0,1));assert.throws(()=>circuit.output('AND',2,0));});
-check('Digital circuit lab renders accessible controls and truth table',()=>{const h=circuit.page();assert.ok(h.includes('aria-pressed'));assert.ok(h.includes('Truth table'));assert.ok(h.includes('not a physical circuit measurement'));assert.ok(h.includes('data-logic-gate'));assert.ok(h.includes('data-logic-reset'));});
-vm.runInContext(await readFile(new URL('../engineering.js',import.meta.url),'utf8'),context);
-const hub=context.window.EngineeringHub;
-check('Engineering project catalog contains distinct, documented projects',()=>{assert.ok(hub.projects.length>=7);assert.equal(new Set(hub.projects.map(p=>p.id)).size,hub.projects.length);for(const p of hub.projects)assert.ok(p.title&&p.goal&&p.steps.length&&p.parts.length&&p.safety&&p.result);});
-check('Project catalog exposes search, topic and difficulty filters',()=>{const h=hub.projectsPage();assert.ok(h.includes('data-project-search'));assert.ok(h.includes('data-project-topic'));assert.ok(h.includes('data-project-level'));assert.ok(h.includes('Blink an LED'));});
-check('Project detail labels pseudocode and hardware limitations honestly',()=>{const h=hub.projectsPage('temperature-monitor');assert.ok(h.toLowerCase().includes('pseudocode'));assert.ok(h.includes('voltage requirements'));assert.ok(h.includes('data-project-step'));assert.ok(h.includes('data-project-note'));});
-check('Code library distinguishes language and validation status',()=>{const h=hub.codePage();assert.ok(h.includes('data-code-search'));assert.ok(h.includes('data-code-language'));assert.ok(h.includes('Pseudocode'));assert.ok(h.includes('Verilog HDL'));const detail=hub.codePage('mqtt-pseudocode');assert.ok(detail.includes('Pseudocode'));assert.ok(detail.includes('data-copy-code'));});
-console.log(`${checks} functional/content checks passed. These are VM checks, not browser or visual verification.`);
+vm.runInContext(
+  await readFile(new URL("../circuit.js", import.meta.url), "utf8"),
+  context,
+);
+const circuit = context.window.CircuitLab;
+check("Digital circuit lab defines all seven standard gates", () =>
+  assert.deepEqual(Object.keys(circuit.gates), [
+    "AND",
+    "OR",
+    "NOT",
+    "NAND",
+    "NOR",
+    "XOR",
+    "XNOR",
+  ]),
+);
+check("Digital logic truth tables are correct", () => {
+  const expected = {
+    AND: [0, 0, 0, 1],
+    OR: [0, 1, 1, 1],
+    NAND: [1, 1, 1, 0],
+    NOR: [1, 0, 0, 0],
+    XOR: [0, 1, 1, 0],
+    XNOR: [1, 0, 0, 1],
+  };
+  for (const [gate, values] of Object.entries(expected))
+    assert.deepEqual(
+      Array.from(circuit.truthTable(gate), (r) => r.y),
+      values,
+      gate,
+    );
+  assert.deepEqual(
+    Array.from(circuit.truthTable("NOT"), (r) => r.y),
+    [1, 0],
+  );
+});
+check("Digital circuit lab rejects invalid gates and non-binary inputs", () => {
+  assert.throws(() => circuit.output("IMAGINARY", 0, 1));
+  assert.throws(() => circuit.output("AND", 2, 0));
+});
+check("Digital circuit lab renders accessible controls and truth table", () => {
+  const h = circuit.page();
+  assert.ok(h.includes("aria-pressed"));
+  assert.ok(h.includes("Truth table"));
+  assert.ok(h.includes("not a physical circuit measurement"));
+  assert.ok(h.includes("data-logic-gate"));
+  assert.ok(h.includes("data-logic-reset"));
+});
+vm.runInContext(
+  await readFile(new URL("../engineering.js", import.meta.url), "utf8"),
+  context,
+);
+const hub = context.window.EngineeringHub;
+check(
+  "Engineering project catalog contains distinct, documented projects",
+  () => {
+    assert.ok(hub.projects.length >= 7);
+    assert.equal(
+      new Set(hub.projects.map((p) => p.id)).size,
+      hub.projects.length,
+    );
+    for (const p of hub.projects)
+      assert.ok(
+        p.title &&
+          p.goal &&
+          p.steps.length &&
+          p.parts.length &&
+          p.safety &&
+          p.result,
+      );
+  },
+);
+check("Project catalog exposes search, topic and difficulty filters", () => {
+  const h = hub.projectsPage();
+  assert.ok(h.includes("data-project-search"));
+  assert.ok(h.includes("data-project-topic"));
+  assert.ok(h.includes("data-project-level"));
+  assert.ok(h.includes("Blink an LED"));
+});
+check(
+  "Project detail labels pseudocode and hardware limitations honestly",
+  () => {
+    const h = hub.projectsPage("temperature-monitor");
+    assert.ok(h.toLowerCase().includes("pseudocode"));
+    assert.ok(h.includes("voltage requirements"));
+    assert.ok(h.includes("data-project-step"));
+    assert.ok(h.includes("data-project-note"));
+  },
+);
+check("Code library distinguishes language and validation status", () => {
+  const h = hub.codePage();
+  assert.ok(h.includes("data-code-search"));
+  assert.ok(h.includes("data-code-language"));
+  assert.ok(h.includes("Pseudocode"));
+  assert.ok(h.includes("Verilog HDL"));
+  const detail = hub.codePage("mqtt-pseudocode");
+  assert.ok(detail.includes("Pseudocode"));
+  assert.ok(detail.includes("data-copy-code"));
+});
+console.log(
+  `${checks} functional/content checks passed. These are VM checks, not browser or visual verification.`,
+);
