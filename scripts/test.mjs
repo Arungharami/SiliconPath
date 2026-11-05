@@ -979,6 +979,131 @@ check(
     P.reset();
   },
 );
+for (const f of ["rtl-engine.js"])
+  vm.runInContext(
+    await readFile(new URL("../" + f, import.meta.url), "utf8"),
+    context,
+  );
+const RE = context.window.RtlEngine;
+const rtlError = (src, top) => {
+  try {
+    RE.compile(src, top);
+  } catch (e) {
+    if (e instanceof RE.RtlError) return e;
+    throw e;
+  }
+  return null;
+};
+const wrap = (body, ports = "input wire a, input wire b, output wire y") =>
+  `module t (${ports});\n${body}\nendmodule`;
+check(
+  "RTL engine applies Verilog width rules (values confirmed with Icarus)",
+  () => {
+    const d = RE.compile(
+      wrap(
+        "assign y = ~a; assign z = (p + q) >> 1; assign w = (p + q) >> 1;",
+        "input wire a, input wire [3:0] p, input wire [3:0] q, output wire [1:0] y, output wire [3:0] z, output wire [4:0] w",
+      ),
+      "t",
+    );
+    const s = RE.simulator(d);
+    s.apply({ a: 0n, p: 15n, q: 15n });
+    assert.equal(s.get("y"), 3n); // a is widened to 2 bits before ~
+    assert.equal(s.get("z"), 7n); // 4-bit context drops the carry
+    assert.equal(s.get("w"), 15n); // 5-bit context keeps it
+    const c = RE.compile(
+      wrap(
+        "assign {co, s} = x + y2 + ci; assign r = &x; assign rep = {2{x[1:0]}};",
+        "input wire [2:0] x, input wire [2:0] y2, input wire ci, output wire [2:0] s, output wire co, output wire r, output wire [3:0] rep",
+      ),
+      "t",
+    );
+    const cs = RE.simulator(c);
+    cs.apply({ x: 7n, y2: 1n, ci: 1n });
+    assert.deepEqual(
+      [cs.get("co"), cs.get("s"), cs.get("r"), cs.get("rep")],
+      [1n, 1n, 1n, 15n],
+    );
+  },
+);
+check(
+  "RTL engine rejects out-of-subset and unsafe designs with a line number",
+  () => {
+    const cases = [
+      [wrap("assign y = a & b;\nassign y = a | b;"), "more than one"],
+      [
+        "module t (input wire en, input wire a, output reg y);\nalways @(*) begin\n if (en) y = a;\nend\nendmodule",
+        "Latch inferred",
+      ],
+      [wrap("wire w;\nassign w = w & a;\nassign y = w;"), "Combinational loop"],
+      [wrap("assign y = c;"), '"c" is not declared'],
+      [
+        "module t (input wire a, output reg y);\nassign y = a;\nendmodule",
+        "declared reg",
+      ],
+      [wrap("always @(*) y = a;"), "must be declared reg"],
+      [
+        "module t (input wire clk, input wire d, output reg q);\nalways @(posedge clk) q = d;\nendmodule",
+        "non-blocking",
+      ],
+      [wrap("assign a = b;\nassign y = b;"), "is an input"],
+      [wrap(""), '"y" is never assigned'],
+      ["module t (a, y);\nendmodule", "ANSI"],
+      [wrap("assign y = 1'bx;"), "2-state"],
+      [wrap("assign y = #1 a;"), "Expected a value"],
+      [
+        wrap(
+          "always @(*) #1 y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "Delays",
+      ],
+      [wrap("initial y = 0;"), "testbench"],
+      [wrap("assign y = $random;"), "System tasks"],
+      [
+        wrap(
+          "always @(a or b) y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "@(*)",
+      ],
+      [wrap("assign y = a * b;"), "Multiplication"],
+      [wrap("assign y = a === b;"), "Use =="],
+      [
+        "module m (input wire a, output wire y);\nassign y = a;\nendmodule\nmodule t (input wire a, output wire y);\nm u (a, y);\nendmodule",
+        "by name",
+      ],
+      [wrap("logic q;"), "SystemVerilog"],
+      [wrap("wire [3:1] q;"), "[msb:0]"],
+      ["module t (input wire [16:0] a, output wire y);\nendmodule", "16 bits"],
+      ["// " + "x".repeat(9000), "longer than"],
+      [wrap("wire constructor;\nassign y = a;"), "cannot be used"],
+      [wrap("wire __proto__;\nassign y = a;"), "cannot be used"],
+    ];
+    for (const [src, msg] of cases) {
+      const e = rtlError(src, "t");
+      assert.ok(e, `accepted: ${src}`);
+      assert.ok(e.message.includes(msg), `${msg} ⇐ ${e.message}`);
+    }
+    assert.equal(rtlError(cases[0][0], "t").line, 3);
+    assert.ok(rtlError(cases[1][0], "t").latch);
+  },
+);
+check("RTL engine reports never-reset registers as unknown, not as 0", () => {
+  const d = RE.compile(
+    "module t (input wire clk, input wire rst, input wire en, output reg [3:0] q);\nalways @(posedge clk) if (rst) q <= 0; else if (en) q <= q + 1;\nendmodule",
+    "t",
+  );
+  const run = RE.runCycles(d, "clk", [
+    { rst: 0n, en: 1n },
+    { rst: 1n, en: 0n },
+    { rst: 0n, en: 1n },
+  ]);
+  assert.deepEqual(
+    run.map((r) => r.outputs.q),
+    [null, 0n, 1n],
+  );
+});
 const { scripts: manifestScripts, shipped } = await import("./files.mjs");
 const indexHtml = await readFile(
   new URL("../index.html", import.meta.url),
