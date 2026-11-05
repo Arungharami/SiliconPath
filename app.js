@@ -934,7 +934,8 @@ fetch("resources.json")
   })
   .catch(() => {
     $("#main").innerHTML =
-      '<div class="wrap"><h1>The library could not load.</h1><p>Please reload the page. For local use, serve the built site with npm run dev.</p><button class="btn" onclick="location.reload()">Reload</button></div>';
+      '<div class="wrap"><h1>The library could not load.</h1><p>Please reload the page. For local use, serve the built site with npm run dev.</p><button class="btn" id="reload-page">Reload</button></div>';
+    $("#reload-page").addEventListener("click", () => location.reload());
   });
 
 window.addEventListener("siliconpath-model", (e) => {

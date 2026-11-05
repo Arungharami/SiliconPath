@@ -699,6 +699,37 @@ check("Code library distinguishes language and validation status", () => {
   assert.ok(detail.includes("Pseudocode"));
   assert.ok(detail.includes("data-copy-code"));
 });
+const { scripts: manifestScripts, shipped } = await import("./files.mjs");
+const indexHtml = await readFile(
+  new URL("../index.html", import.meta.url),
+  "utf8",
+);
+check(
+  "index.html loads exactly the scripts in the shipped-file manifest",
+  () => {
+    const loaded = [...indexHtml.matchAll(/<script src="([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    assert.deepEqual([...loaded].sort(), [...manifestScripts].sort());
+    assert.equal(loaded.at(-1), "app.js", "app.js must load last");
+    for (const f of ["styles.css", "favicon.svg"])
+      assert.ok(indexHtml.includes(f));
+    assert.ok(shipped.includes("resources.json"));
+  },
+);
+check(
+  "Pages contain no inline event-handler attributes (blocked by CSP)",
+  () => {
+    for (const src of [
+      source,
+      labSource,
+      guideSource,
+      operationsSource,
+      indexHtml,
+    ])
+      assert.ok(!/\son[a-z]+=["']/i.test(src));
+  },
+);
 console.log(
   `${checks} functional/content checks passed. These are VM checks, not browser or visual verification.`,
 );

@@ -18,7 +18,7 @@ Updated: October 15, 2026. Status describes implemented work separately from pro
 - Public charter, contribution guide and contributor templates.
 
 ## Current verification
-The October 11 platform update passed 35 Node VM functional/content checks, syntax/catalog checks and the static build. Vercel reported the production deployment READY. Full browser/mobile visual verification remains outstanding.
+November 5, 2026: catalog and syntax checks, 53 Node VM content/logic checks, the static build, and a Chromium browser suite (every route at 1280px and 375px; console/CSP errors, overflow, axe WCAG 2.1 AA serious/critical rules) pass locally and run in CI. Manual screen-reader and cross-browser review remain outstanding.
 
 ## Next — validation and first pilot
 1. Agree a reviewer for one pathway and activity rubric.
