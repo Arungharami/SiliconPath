@@ -41,8 +41,12 @@ After creation, publish profiles, verify owner access and only then link the con
 ## Future — shared learning workflows
 Define privacy, ownership, access and actual learner requirements before building accounts, cohort submissions, shared journals or instructor assessments.
 
-## Next — design workflow track
-Bridge fundamentals to RTL, simulation and synthesis with open-source tools, run locally with reproducible scripts. Requires tool availability checks on Linux, macOS and Windows before committing.
+## November 5 — RTL → Simulation → Synthesis practice track
+- Six modules, 13 auto-checked exercises, an in-browser Verilog subset engine cross-checked against Icarus Verilog, real Yosys output, and a downloadable project bundle. See [rtl-track.md](rtl-track.md).
+
+## Next — design workflow track follow-ups
+- Decide whether to run Yosys in the browser (YoWASP, about 69 MB of WebAssembly) after a load-time and memory spike; it would also need `'wasm-unsafe-eval'` in the CSP.
+- Test the downloaded project bundle on Windows (run.sh needs a POSIX shell; WSL or Git Bash).
 
 ## Future — research tools
 Consider source-grounded search, clearly labeled simulations and reviewed research modules. AI-generated answers must distinguish reviewed evidence from unreviewed records.
