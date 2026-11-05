@@ -16,7 +16,7 @@ Open an issue describing the problem, intended output and evidence, or contact a
 1. Fork the repository and create a focused branch.
 2. Read the relevant source and existing documentation.
 3. Make a bounded change; explain assumptions and cite original sources.
-4. Run `npm run check`, `npm test` and `npm run build` for code or catalog changes.
+4. Run `npm run format:check`, `npm run check`, `npm test`, `npm run build` and `npm run test:e2e` for code or catalog changes. Follow the [code of conduct](CODE_OF_CONDUCT.md); report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 5. Open a pull request with the problem, change, checks and remaining limitations.
 6. Respond to review and agree attribution and handover.
 

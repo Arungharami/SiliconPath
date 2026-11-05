@@ -43,21 +43,26 @@ Volunteer availability, deliverables, external costs, permissions and reviewers 
 ## Project status and evidence
 This is a working independent educational platform and a proposed volunteer service initiative. Public commits and source code show what has been implemented; they do not establish accreditation, institutional endorsement or production readiness.
 
-- Functional/content checks and the static build passed during the October 11, 2026 update.
-- Tests run in a Node VM; full browser and visual verification remains outstanding.
+- Automated checks: catalog and syntax validation, 53 Node VM content/logic checks, and a Chromium browser suite covering every route at desktop and 375px width (console/CSP errors, horizontal overflow, axe WCAG 2.1 AA serious/critical rules). All run in CI. Manual screen-reader review has not been performed.
 - Source descriptions summarize listings; full-content and faculty review are pending.
 - Detailed Vivo-related warehouse and volunteer project case studies require exact roles, dates, permitted names and supporting evidence.
 - The maintainer supplied the GitHub organization name SiliconPath-six. Connector access and organization profile publication remain unverified; see the prepared profile and access guide. A dedicated Hugging Face organization is not verified.
 
 ## Local development
-Requires Node.js 20 or later. No runtime npm dependencies.
+Requires Node.js 20 or later. The site has no runtime dependencies; dev dependencies (Prettier, Playwright, axe-core) are for formatting and tests only.
 
 ```bash
-npm run check
-npm test
-npm run build
-npm run dev
+npm ci                                 # install dev tooling
+npm run dev                            # http://localhost:5173 with production headers
+npm run format:check                   # formatting
+npm run check                          # catalog schema + script syntax
+npm test                               # Node VM content/logic checks
+npm run build                          # produce dist/
+npx playwright install chromium        # once, for browser tests
+npm run test:e2e                       # Chromium route, accessibility and overflow checks
 ```
+
+See [architecture](docs/ARCHITECTURE.md), [changelog](CHANGELOG.md), [security policy](SECURITY.md) and [code of conduct](CODE_OF_CONDUCT.md).
 
 The build produces `dist/`. The development server uses http://localhost:5173. Hash routes support static hosting. See the operational notes below for deployment and catalog maintenance.
 
@@ -78,7 +83,7 @@ Third-party resources retain their owners' rights. Do not infer a reuse license 
 
 
 ## Maintenance and validation
-Edit `resources.json` for catalog changes. Run `npm run check`, `npm test` and `npm run build`. Use `npm run catalog -- list fabrication` to inspect records and `npm run export:catalog` to export the catalog. The development server is http://localhost:5173.
+Edit `resources.json` for catalog changes. Run `npm run check`, `npm test`, `npm run build` and `npm run test:e2e`. New script files must be added to `scripts/files.mjs` and `index.html`. Use `npm run catalog -- list fabrication` to inspect records and `npm run export:catalog` to export the catalog. The development server is http://localhost:5173.
 
 Vercel uses build command `npm run build`, output directory `dist` and the existing SiliconPath project. Notes and progress use browser localStorage. No account system or cloud synchronization is implemented.
 
