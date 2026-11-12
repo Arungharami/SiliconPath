@@ -19,3 +19,17 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+  rtl-crosscheck:
+    # Compares the in-browser Verilog subset engine with Icarus Verilog and
+    # Yosys on every corpus and exercise design, runs the generated
+    # testbenches and project bundle, and verifies the committed netlist.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y iverilog yosys
+      - run: npm run test:rtl
