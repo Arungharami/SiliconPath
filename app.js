@@ -448,7 +448,7 @@ function resourceCard(r) {
   return `<article class="card resource"><span class="tag">${esc(r.kind)} · ${esc(r.topic)}</span><span class="provider">${esc(r.provider)}</span><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><span class="subtle">${esc(r.level)} · ${esc(r.access)}</span><div class="bottom"><button class="btn secondary small" data-detail="${r.id}">Study guide ↗</button><button class="save" data-save="${r.id}" aria-pressed="${saved.includes(r.id)}">${saved.includes(r.id) ? "✓ Saved" : "+ Save"}</button></div></article>`;
 }
 function home() {
-  return `<section class="initiative-home"><div><span class="eyebrow">NEW / FACULTY DISCUSSION + FUTURE DEVELOPMENT</span><h2>One pathway from learning to a future lab.</h2><p>Explore a possible FAU teaching concept and Arun’s proposed digital platform and two-lab expansion.</p></div><a class="btn" href="#initiative">View the development plan ↗</a></section><div class="wrap"><section class="hero"><div><div class="eyebrow">A living book. A practical pathway.</div><h1>From semiconductor<br><em>knowledge</em><br>to capability.</h1><p class="lead">Learn how chips work. Explore trusted resources. Plan a training center that connects study with practical skills.</p><div class="actions"><a class="btn" href="#start">Find your starting point <span>↗</span></a><a class="btn secondary" href="#planner">Plan a training center</a></div><p class="note">For curious learners, educators and institutions everywhere.</p><a class="text-link" href="#support">Semiconductor readiness & volunteer support ↗</a></div><div class="chip-scene" role="img" aria-label="Conceptual integrated circuit illustration"><span class="scene-tag">SILICONPATH / THE KNOWLEDGE ECOSYSTEM</span><div class="chip"><span>Si / PATH</span></div><div class="floating"><b>Read. Watch. Apply.</b>One connected learning journey.</div><div class="scene-bottom"><span>FOUNDATIONS → PRACTICE</span><span>CONCEPT ILLUSTRATION</span></div></div></section><section class="logic-home-callout"><div><span class="eyebrow">NEW · INTERACTIVE LEARNING</span><h2>Learn digital logic by experimenting.</h2><p>Toggle binary inputs, compare seven logic gates, and explore live truth tables in a browser-based circuit lab.</p></div><div class="actions"><a class="btn" href="#circuit">Open Digital Circuit Lab ↗</a><a class="btn secondary" href="#practice">Practice: Logic → CMOS ↗</a><a class="btn secondary" href="#projects">Explore Projects ↗</a><a class="text-link" href="#code">Code library ↗</a></div></section>${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="eyebrow">PACKAGING & PCB LEARNING PILOT</span><h2>Explore the connections inside electronics.</h2><p class="subtle">Five interactive concept models, source-guided activities and your own learning notes. Rotate the parts and separate their layers.</p></div><a class="btn" href="#packaging">Open the learning pilot ↗</a></section><div class="stats"><div><b>${resources.length}</b><span>Curated starting resources</span></div><div><b>06</b><span>Guided learning paths</span></div><div><b>03</b><span>Training-center models</span></div><div><b>01</b><span>Connected study workspace</span></div></div><div class="section-top"><div><span class="eyebrow">Built around your purpose</span><h2>What brings you to SiliconPath?</h2></div><a class="text-link" href="#start">Choose a journey ↗</a></div><div class="grid audience-grid"><a class="card" href="#path/foundations"><span class="number">FOR LEARNERS</span><h3>Understand the field.</h3><p>Read, watch and apply concepts through a guided study path.</p><span class="text-link">Start with foundations ↗</span></a><a class="card" href="#faculty"><span class="number">FOR FACULTY</span><h3>Build a teachable module.</h3><p>Connect outcomes, resources, activities and assessment evidence.</p><span class="text-link">Open the faculty toolkit ↗</span></a><a class="card" href="#equipment"><span class="number">FOR LAB PLANNERS</span><h3>Make the scope concrete.</h3><p>Match equipment to skills, dependencies and quote-based costs.</p><span class="text-link">Explore equipment & costs ↗</span></a></div><section class="concrete-hero lab-entry"><div><span class="eyebrow">Explore the lab studio</span><h2>One idea. Three scales.</h2><p class="subtle">Walk through a micro teaching lab, a medium shared lab or a large research facility. Rotate the 3D scene and connect every station to its learning task.</p></div><a class="btn" href="#labs">Explore 3D workflows ↗</a></section><div class="section-top"><div><p class="eyebrow">Choose your starting point</p><h2>A clear path through a complex field.</h2></div><a class="text-link" href="#learn">All learning paths ↗</a></div><div class="grid">${paths.slice(0, 3).map(pathCard).join("")}</div><div class="banner"><div><span class="eyebrow">For schools, colleges & universities</span><h2 style="margin-top:15px">Build the plan before you build the lab.</h2><p>Connect learner needs, curriculum, equipment, facilities and assessment in a faculty discussion brief.</p></div><div><a class="btn" href="#planner">Open the center planner ↗</a><p class="note">A planning framework with explicit dependencies.</p></div></div><div class="section-top"><div><p class="eyebrow">The study library</p><h2>Good sources. Clear context.</h2></div><a class="text-link" href="#library">Browse the library ↗</a></div><div class="grid">${resources
+  return `<section class="initiative-home"><div><span class="eyebrow">NEW / FACULTY DISCUSSION + FUTURE DEVELOPMENT</span><h2>One pathway from learning to a future lab.</h2><p>Explore a possible FAU teaching concept and Arun’s proposed digital platform and two-lab expansion.</p></div><a class="btn" href="#initiative">View the development plan ↗</a></section><div class="wrap"><section class="hero"><div><div class="eyebrow">A living book. A practical pathway.</div><h1>From semiconductor<br><em>knowledge</em><br>to capability.</h1><p class="lead">Learn how chips work. Explore trusted resources. Plan a training center that connects study with practical skills.</p><div class="actions"><a class="btn" href="#start">Find your starting point <span>↗</span></a><a class="btn secondary" href="#planner">Plan a training center</a></div><p class="note">For curious learners, educators and institutions everywhere.</p><a class="text-link" href="#support">Semiconductor readiness & volunteer support ↗</a></div><div class="chip-scene" role="img" aria-label="Conceptual integrated circuit illustration"><span class="scene-tag">SILICONPATH / THE KNOWLEDGE ECOSYSTEM</span><div class="chip"><span>Si / PATH</span></div><div class="floating"><b>Read. Watch. Apply.</b>One connected learning journey.</div><div class="scene-bottom"><span>FOUNDATIONS → PRACTICE</span><span>CONCEPT ILLUSTRATION</span></div></div></section><section class="logic-home-callout"><div><span class="eyebrow">NEW · INTERACTIVE LEARNING</span><h2>Learn digital logic by experimenting.</h2><p>Toggle binary inputs, compare seven logic gates, and explore live truth tables in a browser-based circuit lab.</p></div><div class="actions"><a class="btn" href="#circuit">Open Digital Circuit Lab ↗</a><a class="btn secondary" href="#practice">Practice: Logic → CMOS ↗</a><a class="btn secondary" href="#rtl">Practice: RTL → Synthesis ↗</a><a class="btn secondary" href="#projects">Explore Projects ↗</a><a class="text-link" href="#code">Code library ↗</a></div></section>${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="eyebrow">PACKAGING & PCB LEARNING PILOT</span><h2>Explore the connections inside electronics.</h2><p class="subtle">Five interactive concept models, source-guided activities and your own learning notes. Rotate the parts and separate their layers.</p></div><a class="btn" href="#packaging">Open the learning pilot ↗</a></section><div class="stats"><div><b>${resources.length}</b><span>Curated starting resources</span></div><div><b>06</b><span>Guided learning paths</span></div><div><b>03</b><span>Training-center models</span></div><div><b>01</b><span>Connected study workspace</span></div></div><div class="section-top"><div><span class="eyebrow">Built around your purpose</span><h2>What brings you to SiliconPath?</h2></div><a class="text-link" href="#start">Choose a journey ↗</a></div><div class="grid audience-grid"><a class="card" href="#path/foundations"><span class="number">FOR LEARNERS</span><h3>Understand the field.</h3><p>Read, watch and apply concepts through a guided study path.</p><span class="text-link">Start with foundations ↗</span></a><a class="card" href="#faculty"><span class="number">FOR FACULTY</span><h3>Build a teachable module.</h3><p>Connect outcomes, resources, activities and assessment evidence.</p><span class="text-link">Open the faculty toolkit ↗</span></a><a class="card" href="#equipment"><span class="number">FOR LAB PLANNERS</span><h3>Make the scope concrete.</h3><p>Match equipment to skills, dependencies and quote-based costs.</p><span class="text-link">Explore equipment & costs ↗</span></a></div><section class="concrete-hero lab-entry"><div><span class="eyebrow">Explore the lab studio</span><h2>One idea. Three scales.</h2><p class="subtle">Walk through a micro teaching lab, a medium shared lab or a large research facility. Rotate the 3D scene and connect every station to its learning task.</p></div><a class="btn" href="#labs">Explore 3D workflows ↗</a></section><div class="section-top"><div><p class="eyebrow">Choose your starting point</p><h2>A clear path through a complex field.</h2></div><a class="text-link" href="#learn">All learning paths ↗</a></div><div class="grid">${paths.slice(0, 3).map(pathCard).join("")}</div><div class="banner"><div><span class="eyebrow">For schools, colleges & universities</span><h2 style="margin-top:15px">Build the plan before you build the lab.</h2><p>Connect learner needs, curriculum, equipment, facilities and assessment in a faculty discussion brief.</p></div><div><a class="btn" href="#planner">Open the center planner ↗</a><p class="note">A planning framework with explicit dependencies.</p></div></div><div class="section-top"><div><p class="eyebrow">The study library</p><h2>Good sources. Clear context.</h2></div><a class="text-link" href="#library">Browse the library ↗</a></div><div class="grid">${resources
     .filter((r) =>
       ["asml-video", "mit-devices", "wiley-physics"].includes(r.id),
     )
@@ -456,7 +456,7 @@ function home() {
     .join("")}</div></div>`;
 }
 function learn() {
-  return `<div class="wrap">${head("The learning atlas", "Learn with a sequence.", "Every path connects an explanation, selected reading, an activity and a knowledge check. Progress is saved on this browser.")}<section class="concrete-hero lab-entry practice-entry"><div><span class="eyebrow">PRACTICE TRACK · AUTO-CHECKED</span><h2>Logic → CMOS</h2><p class="subtle">Five modules from truth tables to transistor-level gate design. Every answer is checked against every possible input, and passed exercises become exportable evidence.</p></div><a class="btn" href="#practice">Start practicing ↗</a></section><div class="grid">${paths.map(pathCard).join("")}</div><div class="callout">These are original study pathways, not accredited courses or industry certifications. Faculty review is pending.</div></div>`;
+  return `<div class="wrap">${head("The learning atlas", "Learn with a sequence.", "Every path connects an explanation, selected reading, an activity and a knowledge check. Progress is saved on this browser.")}<section class="concrete-hero lab-entry practice-entry"><div><span class="eyebrow">PRACTICE TRACK · AUTO-CHECKED</span><h2>Logic → CMOS</h2><p class="subtle">Five modules from truth tables to transistor-level gate design. Every answer is checked against every possible input, and passed exercises become exportable evidence.</p></div><a class="btn" href="#practice">Start practicing ↗</a></section><section class="concrete-hero lab-entry practice-entry"><div><span class="eyebrow">PRACTICE TRACK · AUTO-CHECKED</span><h2>RTL → Simulation → Synthesis</h2><p class="subtle">Six modules from your first Verilog module to a verified 4-bit counter: write RTL in the browser, catch bugs with your own test vectors, read waveforms and real Yosys output, and download a project you can run with open-source tools.</p></div><a class="btn" href="#rtl">Start the RTL track ↗</a></section><div class="grid">${paths.map(pathCard).join("")}</div><div class="callout">These are original study pathways, not accredited courses or industry certifications. Faculty review is pending.</div></div>`;
 }
 function library() {
   return `<div class="wrap">${head("Books / videos / courses / research", "Your semiconductor study library.", "Find a credible starting source, understand why it matters, and save it to your study desk.")}<div class="format-shortcuts" aria-label="Browse resource format"><a href="#library/Book">Books</a><a href="#library/Video">Videos</a><a href="#library/Course">Courses</a><a href="#library/Paper">Papers</a><a href="#library/Report">Reports</a></div><div class="toolbar"><input id="search" type="search" aria-label="Search resources" placeholder="Search a topic, title or organization…"><select id="kind" aria-label="Resource type"><option value="">All formats</option>${[...new Set(resources.map((r) => r.kind))].map((x) => `<option>${x}</option>`).join("")}</select><select id="topic" aria-label="Topic"><option value="">All topics</option>${[
@@ -526,10 +526,24 @@ function workspace() {
       "",
     )}<p class="subtle">Progress is self-reported and can be edited in each path.</p>${practiceSummaryHtml()}</aside><section><div class="panel"><label for="study-notes"><h3>Research & study notebook</h3></label><p class="subtle">Suggested structure: question → source → key idea → evidence → limitations → teaching application. Include page numbers and whether you read the full text.</p><textarea id="study-notes" placeholder="Write your study notes here…">${esc(notes)}</textarea><span class="subtle" id="notes-status">Saved locally; export for a durable copy.</span></div><h3>${rs.length} saved resources</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">${rs.length ? rs.map(resourceCard).join("") : '<div class="empty">Your reading list is empty.<br><a class="text-link" href="#library">Find your first resource ↗</a></div>'}</div></section></div></div>`;
 }
+// Auto-checked practice tracks: [backup key, module, label, route].
+function practiceTracks() {
+  return [
+    ["practice", window.PracticeTrack, "Logic → CMOS", "practice"],
+    ["rtl", window.RtlTrack, "RTL → Synthesis", "rtl"],
+  ].filter((t) => t[1]);
+}
 function practiceSummaryHtml() {
-  if (!window.PracticeTrack) return "";
-  const s = window.PracticeTrack.summary();
-  return `<h3>Practice evidence</h3><a href="#practice">Logic → CMOS<div class="progress"><span style="width:${(s.done / s.total) * 100}%"></span></div><span class="subtle">${s.done}/${s.total} exercises passed</span></a><p class="subtle">Checked automatically from your saved answers.</p>`;
+  const tracks = practiceTracks();
+  if (!tracks.length) return "";
+  return `<h3>Practice evidence</h3>${tracks
+    .map(([, t, label, route]) => {
+      const s = t.summary();
+      return `<a href="#${route}">${label}<div class="progress"><span style="width:${(s.done / s.total) * 100}%"></span></div><span class="subtle">${s.done}/${s.total} exercises passed</span></a>`;
+    })
+    .join(
+      "",
+    )}<p class="subtle">Checked automatically from your saved answers.</p>`;
 }
 function purposeSection() {
   return `<div class="section-top"><div><span class="eyebrow">Our purpose</span><h2>Knowledge that leads to practical progress.</h2></div><a class="text-link" href="#about">About SiliconPath ↗</a></div><div class="grid"><article class="panel"><span class="tag">MISSION</span><h3>Make the next step clear.</h3><p>Connect credible semiconductor learning with practical planning, digital tools and voluntary project support so learners and project teams can make informed decisions.</p></article><article class="panel"><span class="tag">VISION</span><h3>A pathway from curiosity to capability.</h3><p>A future where more learners and institutions can build semiconductor knowledge, develop supervised practical skills and contribute to well-documented projects.</p></article><article class="panel"><span class="tag">OUR SERVICE</span><h3>Turn ideas into reviewable work.</h3><p>Support project readiness, facility requirements, equipment research, workforce preparation, setup coordination and digital demonstrations.</p><a class="text-link" href="#support">Explore services & deliverables ↗</a></article></div>`;
@@ -710,7 +724,18 @@ function deskText() {
     .map((r) => `- ${r.title} — ${r.provider}\n  ${r.url}\n  ${r.review}`)
     .join(
       "\n",
-    )}\n\n## Notes\n${storage.read("sp-notes", "")}\n\n## Self-reported progress\n${paths.map((p) => `${p.title}: ${p.steps.filter((_, i) => completed.includes(`${p.id}-${i}`)).length}/3 stages`).join("\n")}\n${window.PracticeTrack ? `\n## Practice evidence (auto-checked)\nLogic → CMOS: ${window.PracticeTrack.summary().done}/${window.PracticeTrack.summary().total} exercises passed. Export the full evidence portfolio from the Practice page.\n` : ""}`;
+    )}\n\n## Notes\n${storage.read("sp-notes", "")}\n\n## Self-reported progress\n${paths.map((p) => `${p.title}: ${p.steps.filter((_, i) => completed.includes(`${p.id}-${i}`)).length}/3 stages`).join("\n")}\n${
+    practiceTracks().length
+      ? `\n## Practice evidence (auto-checked)\n${practiceTracks()
+          .map(
+            ([, t, label]) =>
+              `${label}: ${t.summary().done}/${t.summary().total} exercises passed.`,
+          )
+          .join(
+            "\n",
+          )} Export the full evidence portfolios from the Practice pages.\n`
+      : ""
+  }`;
 }
 function bind() {
   if ($("#search")) {
@@ -764,7 +789,9 @@ function bind() {
             completed,
             plan,
             notes: storage.read("sp-notes", ""),
-            practice: window.PracticeTrack?.exportState(),
+            ...Object.fromEntries(
+              practiceTracks().map(([key, t]) => [key, t.exportState()]),
+            ),
           },
           null,
           2,
@@ -812,8 +839,8 @@ function bind() {
         storage.write("sp-completed", completed);
         storage.write("sp-plan", plan);
         storage.write("sp-notes", v.notes);
-        if (window.PracticeTrack && v.practice)
-          window.PracticeTrack.importState(v.practice);
+        for (const [key, t] of practiceTracks())
+          if (v[key]) t.importState(v[key]);
         render(false);
         toast("Workspace restored");
       } catch {
@@ -843,15 +870,17 @@ function render(scroll = true) {
     projects: () => window.EngineeringHub.projectsPage(route[1]),
     code: () => window.EngineeringHub.codePage(route[1]),
     practice: () => window.PracticeTrack.page(route[1]),
+    rtl: () => window.RtlTrack.page(route[1]),
   };
   $("#main").innerHTML =
     route[0] === "path" ? pathView(route[1]) : (pages[route[0]] || notFound)();
-  document.title = `${route[0] === "home" ? "From knowledge to capability" : route[0] === "path" ? paths.find((p) => p.id === route[1])?.title || "Learning path" : { initiative: "Course concept & future labs", packaging: "Packaging & PCB learning pilot", support: "Project support", operations: "Lab operational study", start: "Start here", equipment: "Equipment & costs", faculty: "Faculty toolkit", labs: "3D lab studio", circuit: "Digital circuit lab", practice: "Logic → CMOS practice", projects: "Engineering projects", code: "Engineering code library", learn: "Learning paths", library: "Study library", planner: "Training-center planner", workspace: "My study desk", about: "Editorial policy" }[route[0]] || "Page not found"} | SiliconPath`;
-  document.querySelectorAll("nav a").forEach((a) => {
+  document.title = `${route[0] === "home" ? "From knowledge to capability" : route[0] === "path" ? paths.find((p) => p.id === route[1])?.title || "Learning path" : { initiative: "Course concept & future labs", packaging: "Packaging & PCB learning pilot", support: "Project support", operations: "Lab operational study", start: "Start here", equipment: "Equipment & costs", faculty: "Faculty toolkit", labs: "3D lab studio", circuit: "Digital circuit lab", practice: "Logic → CMOS practice", rtl: "RTL → Synthesis practice", projects: "Engineering projects", code: "Engineering code library", learn: "Learning paths", library: "Study library", planner: "Training-center planner", workspace: "My study desk", about: "Editorial policy" }[route[0]] || "Page not found"} | SiliconPath`;
+  document.querySelectorAll("header nav a").forEach((a) => {
     a.removeAttribute("aria-current");
     if (
       a.hash === "#" + route[0] ||
-      (route[0] === "path" && a.hash === "#learn")
+      (route[0] === "path" && a.hash === "#learn") ||
+      (route[0] === "rtl" && a.hash === "#practice")
     )
       a.setAttribute("aria-current", "page");
   });
@@ -866,6 +895,7 @@ function render(scroll = true) {
   if (route[0] === "circuit" && window.CircuitLab) window.CircuitLab.bind();
   if (route[0] === "practice" && window.PracticeTrack)
     window.PracticeTrack.bind();
+  if (route[0] === "rtl" && window.RtlTrack) window.RtlTrack.bind();
   if ((route[0] === "projects" || route[0] === "code") && window.EngineeringHub)
     window.EngineeringHub.bind();
   if (route[0] === "labs" && window.LabStudio) {
@@ -954,7 +984,7 @@ window.addEventListener("siliconpath-model", (e) => {
   storage.write("sp-plan", plan);
 });
 window.addEventListener("siliconpath-export", (e) =>
-  download(e.detail.name, e.detail.text),
+  download(e.detail.name, e.detail.data ?? e.detail.text, e.detail.type),
 );
 
 function cleanBudget(raw) {

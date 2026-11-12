@@ -35,6 +35,7 @@ const context = vm.createContext({
   clearTimeout,
   URL,
   Blob,
+  TextEncoder,
   location: { hash: "#home" },
   confirm: () => true,
   localStorage: {
@@ -127,7 +128,7 @@ check("Unknown path has a return route", () =>
 check("Search finds provider and title", () => {
   node("#search").value = "MIT";
   a.filter();
-  assert.ok(node("#result-count").textContent.startsWith("7 resource"));
+  assert.ok(node("#result-count").textContent.startsWith("8 resource"));
   node("#search").value = "";
 });
 check("Format filter distinguishes papers from reports", () => {
@@ -979,7 +980,396 @@ check(
     P.reset();
   },
 );
+for (const f of ["rtl-engine.js", "rtl-synth.js", "rtl.js"])
+  vm.runInContext(
+    await readFile(new URL("../" + f, import.meta.url), "utf8"),
+    context,
+  );
+const RE = context.window.RtlEngine;
+const R = context.window.RtlTrack;
+const rtlError = (src, top) => {
+  try {
+    RE.compile(src, top);
+  } catch (e) {
+    if (e instanceof RE.RtlError) return e;
+    throw e;
+  }
+  return null;
+};
+const wrap = (body, ports = "input wire a, input wire b, output wire y") =>
+  `module t (${ports});\n${body}\nendmodule`;
+check(
+  "RTL engine applies Verilog width rules (values confirmed with Icarus)",
+  () => {
+    const d = RE.compile(
+      wrap(
+        "assign y = ~a; assign z = (p + q) >> 1; assign w = (p + q) >> 1;",
+        "input wire a, input wire [3:0] p, input wire [3:0] q, output wire [1:0] y, output wire [3:0] z, output wire [4:0] w",
+      ),
+      "t",
+    );
+    const s = RE.simulator(d);
+    s.apply({ a: 0n, p: 15n, q: 15n });
+    assert.equal(s.get("y"), 3n); // a is widened to 2 bits before ~
+    assert.equal(s.get("z"), 7n); // 4-bit context drops the carry
+    assert.equal(s.get("w"), 15n); // 5-bit context keeps it
+    const c = RE.compile(
+      wrap(
+        "assign {co, s} = x + y2 + ci; assign r = &x; assign rep = {2{x[1:0]}};",
+        "input wire [2:0] x, input wire [2:0] y2, input wire ci, output wire [2:0] s, output wire co, output wire r, output wire [3:0] rep",
+      ),
+      "t",
+    );
+    const cs = RE.simulator(c);
+    cs.apply({ x: 7n, y2: 1n, ci: 1n });
+    assert.deepEqual(
+      [cs.get("co"), cs.get("s"), cs.get("r"), cs.get("rep")],
+      [1n, 1n, 1n, 15n],
+    );
+  },
+);
+check(
+  "RTL engine rejects out-of-subset and unsafe designs with a line number",
+  () => {
+    const cases = [
+      [wrap("assign y = a & b;\nassign y = a | b;"), "more than one"],
+      [
+        "module t (input wire en, input wire a, output reg y);\nalways @(*) begin\n if (en) y = a;\nend\nendmodule",
+        "Latch inferred",
+      ],
+      [wrap("wire w;\nassign w = w & a;\nassign y = w;"), "Combinational loop"],
+      [wrap("assign y = c;"), '"c" is not declared'],
+      [
+        "module t (input wire a, output reg y);\nassign y = a;\nendmodule",
+        "declared reg",
+      ],
+      [wrap("always @(*) y = a;"), "must be declared reg"],
+      [
+        "module t (input wire clk, input wire d, output reg q);\nalways @(posedge clk) q = d;\nendmodule",
+        "non-blocking",
+      ],
+      [wrap("assign a = b;\nassign y = b;"), "is an input"],
+      [wrap(""), '"y" is never assigned'],
+      ["module t (a, y);\nendmodule", "ANSI"],
+      [wrap("assign y = 1'bx;"), "2-state"],
+      [wrap("assign y = #1 a;"), "Expected a value"],
+      [
+        wrap(
+          "always @(*) #1 y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "Delays",
+      ],
+      [wrap("initial y = 0;"), "testbench"],
+      [wrap("assign y = $random;"), "System tasks"],
+      [
+        wrap(
+          "always @(a or b) y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "@(*)",
+      ],
+      [wrap("assign y = a * b;"), "Multiplication"],
+      [wrap("assign y = a === b;"), "Use =="],
+      [
+        "module m (input wire a, output wire y);\nassign y = a;\nendmodule\nmodule t (input wire a, output wire y);\nm u (a, y);\nendmodule",
+        "by name",
+      ],
+      [wrap("logic q;"), "SystemVerilog"],
+      [wrap("wire [3:1] q;"), "[msb:0]"],
+      ["module t (input wire [16:0] a, output wire y);\nendmodule", "16 bits"],
+      ["// " + "x".repeat(9000), "longer than"],
+      [wrap("wire constructor;\nassign y = a;"), "cannot be used"],
+      [wrap("wire __proto__;\nassign y = a;"), "cannot be used"],
+    ];
+    for (const [src, msg] of cases) {
+      const e = rtlError(src, "t");
+      assert.ok(e, `accepted: ${src}`);
+      assert.ok(e.message.includes(msg), `${msg} ⇐ ${e.message}`);
+    }
+    assert.equal(rtlError(cases[0][0], "t").line, 3);
+    assert.ok(rtlError(cases[1][0], "t").latch);
+  },
+);
+check("RTL engine reports never-reset registers as unknown, not as 0", () => {
+  const d = RE.compile(
+    "module t (input wire clk, input wire rst, input wire en, output reg [3:0] q);\nalways @(posedge clk) if (rst) q <= 0; else if (en) q <= q + 1;\nendmodule",
+    "t",
+  );
+  const run = RE.runCycles(d, "clk", [
+    { rst: 0n, en: 1n },
+    { rst: 1n, en: 0n },
+    { rst: 0n, en: 1n },
+  ]);
+  assert.deepEqual(
+    run.map((r) => r.outputs.q),
+    [null, 0n, 1n],
+  );
+});
+check(
+  "Every RTL exercise accepts its reference and alternatives and rejects starters and bugs",
+  () => {
+    for (const ex of R.exercises) {
+      if (ex.type === "design") {
+        assert.ok(R.check(ex.id, ex.ref).pass, `${ex.id} reference`);
+        for (const alt of ex.alts)
+          assert.ok(R.check(ex.id, alt).pass, `${ex.id} alt`);
+        for (const w of ex.wrongs) {
+          const r = R.check(ex.id, w);
+          assert.ok(!r.pass && r.feedback.length > 20, `${ex.id} wrong`);
+        }
+        const st = R.check(ex.id, ex.starter);
+        assert.ok(!st.pass && st.feedback, `${ex.id} starter`);
+      }
+      if (ex.type === "vectors") {
+        assert.ok(R.check(ex.id, ex.sample).pass, `${ex.id} sample`);
+        assert.ok(ex.sample.trim().split("\n").length <= ex.maxLines);
+      }
+    }
+    assert.ok(
+      R.check(
+        "latch-fix",
+        R.exercises.find((e) => e.id === "latch-fix").starter,
+      ).feedback.includes("Latch inferred"),
+    );
+    assert.ok(
+      !R.check(
+        "full-adder",
+        R.exercises.find((e) => e.id === "full-adder").wrongs[0],
+      ).pass,
+    );
+    assert.ok(
+      R.check(
+        "and3",
+        "module and3 (input wire a, input wire b, output wire y);\nassign y = a;\nendmodule",
+      ).feedback.includes("Port c"),
+    );
+    assert.ok(
+      R.check(
+        "mux2",
+        "module mux2 (input wire [3:0] a, input wire [3:0] b, input wire sel, output wire y);\nassign y = 0;\nendmodule",
+      ).feedback.includes("4 bits"),
+    );
+    assert.ok(
+      R.check(
+        "and3",
+        "module wrong (input wire a, output wire y); assign y = a; endmodule",
+      ).feedback.includes("named and3"),
+    );
+    const seq = R.check(
+      "counter4",
+      R.exercises.find((e) => e.id === "counter4").wrongs[0],
+    );
+    assert.ok(/^Cycle \d+/.test(seq.feedback), seq.feedback);
+  },
+);
+check(
+  "RTL read, wave and netlist answers are computed from code and real Yosys output",
+  () => {
+    assert.ok(
+      R.check("read-mystery", { w: "4", in: "9", v1: "1000", v0: "4'b1110" })
+        .pass,
+    );
+    assert.ok(
+      !R.check("read-mystery", { w: "4", in: "9", v1: "1110", v0: "1000" })
+        .pass,
+    );
+    const wave = R.exercises.find((e) => e.id === "wave-find");
+    const first = R.waveAnswer(wave);
+    assert.ok(first > 0);
+    assert.deepEqual(
+      [wave.stimulus[first].rst, wave.stimulus[first].en],
+      [1n, 0n],
+    );
+    assert.ok(R.check("wave-find", String(first)).pass);
+    assert.ok(!R.check("wave-find", String(first - 1)).pass);
+    const syn = context.window.RtlSynth;
+    assert.ok(/^Yosys \d/.test(syn.yosys));
+    const c = R.netlistCounts(syn.designs.full_adder.netlist);
+    const cells = syn.designs.full_adder.stat.cells;
+    assert.deepEqual(
+      [c.nand, c.nor, c.not],
+      [cells.$_NAND_, cells.$_NOR_, cells.$_NOT_],
+    );
+    assert.ok(
+      syn.designs.full_adder.stat.transistors.startsWith(String(c.transistors)),
+    );
+    assert.ok(
+      R.check("netlist-read", {
+        nand: c.nand,
+        nor: c.nor,
+        not: c.not,
+        tr: c.transistors,
+      }).pass,
+    );
+    assert.ok(
+      !R.check("netlist-read", {
+        nand: c.nand,
+        nor: c.nor,
+        not: c.not,
+        tr: c.transistors + 2,
+      }).pass,
+    );
+    assert.ok(syn.latchLogs["latch-fix"].includes("Latch inferred"));
+  },
+);
+check(
+  "RTL vector checker validates against the spec, counts caught bugs and reports lines",
+  () => {
+    const ok = R.check("vectors-mux", "0 1 0 1\n1 0 1 1\n1 1 0 0");
+    assert.ok(
+      ok.pass &&
+        ok.criteria.filter((c) => c.label.startsWith("Catches")).length === 4,
+    );
+    const wrongSpec = R.check("vectors-mux", "0 1 0 0");
+    assert.ok(!wrongSpec.pass && wrongSpec.feedback.startsWith("Line 1"));
+    const weak = R.check("vectors-mux", "0 0 0 0\n1 1 1 1");
+    assert.ok(!weak.pass && weak.feedback.includes("miss"));
+    const bad = R.check("vectors-mux", "0 1 0 1\n\n1 2 0 1");
+    assert.ok(!bad.pass && bad.feedback.startsWith("Line 3"));
+    assert.ok(
+      !R.check("vectors-mux", Array(7).fill("0 1 0 1").join("\n")).pass,
+    );
+    const noReset = R.check("counter-vectors", "0 1 1 0");
+    assert.ok(noReset.feedback.includes("reset"));
+  },
+);
+check(
+  "RTL evidence keeps the first pass and recomputes imported records",
+  () => {
+    R.reset();
+    const ex = R.exercises.find((e) => e.id === "and3");
+    assert.ok(!R.submit("and3", ex.starter, "2026-11-05T10:00:00.000Z").pass);
+    assert.ok(R.submit("and3", ex.ref, "2026-11-05T10:01:00.000Z").pass);
+    R.submit("and3", ex.starter, "2026-11-05T10:02:00.000Z");
+    const rec = JSON.parse(memory.get("sp-rtl")).records.and3;
+    assert.deepEqual(
+      [rec.attempts, rec.passedAt, rec.passAnswer],
+      [3, "2026-11-05T10:01:00.000Z", ex.ref],
+    );
+    const clean = R.sanitize({
+      records: {
+        and3: {
+          attempts: 1,
+          passedAt: "2026-11-05T10:00:00.000Z",
+          passAnswer: ex.starter,
+          answer: ex.starter,
+        },
+        mux2: {
+          attempts: 2,
+          passedAt: "2026-11-05T10:00:00.000Z",
+          passAnswer: R.exercises.find((e) => e.id === "mux2").ref,
+        },
+        bogus: { attempts: 5, passedAt: "2026-11-05T10:00:00.000Z" },
+        dffe: {
+          attempts: 1,
+          passedAt: "x",
+          passAnswer: R.exercises.find((e) => e.id === "dffe").ref,
+        },
+        "half-adder": { attempts: 1, answer: "a".repeat(20000) },
+      },
+    });
+    assert.ok(!clean.records.and3.passedAt);
+    assert.ok(clean.records.mux2.passedAt);
+    assert.ok(!clean.records.bogus && !clean.records.dffe.passedAt);
+    assert.equal(clean.records["half-adder"].answer.length, RE.LIMITS.source);
+    R.reset();
+  },
+);
+check("RTL testbenches, project bundle and ZIP are well formed", () => {
+  const ex = R.exercises.find((e) => e.id === "counter4");
+  const tb = R.referenceTestbench(ex);
+  for (const s of [
+    "module tb;",
+    "counter4 dut (",
+    ".clk(clk)",
+    '$dumpfile("wave.vcd")',
+    "PASS: %0d checks",
+    "#5 clk = 1;",
+  ])
+    assert.ok(tb.includes(s), s);
+  const vtb = R.vectorTestbench(
+    R.exercises.find((e) => e.id === "vectors-mux"),
+    "0 1 0 1",
+  );
+  assert.ok(vtb.includes("sel = 1'd0;") && vtb.includes("if (y !== 1'd1)"));
+  const files = R.bundleFiles("2026-11-05T00:00:00.000Z");
+  assert.deepEqual(Object.keys(files), [
+    "design.v",
+    "tb.v",
+    "run.sh",
+    "README.md",
+  ]);
+  assert.ok(
+    files["run.sh"].includes("iverilog -g2005") &&
+      files["run.sh"].includes("stat -tech cmos"),
+  );
+  assert.ok(files["README.md"].includes("not from these tools"));
+  assert.equal(R.crc32(new TextEncoder().encode("123456789")), 0xcbf43926);
+  const z = R.zip({ "a.txt": "hi", "b.txt": "there" }, "p/");
+  const dv = new DataView(z.buffer);
+  assert.equal(dv.getUint32(0, true), 0x04034b50);
+  const eocd = z.length - 22;
+  assert.equal(dv.getUint32(eocd, true), 0x06054b50);
+  assert.equal(dv.getUint16(eocd + 10, true), 2);
+});
+check(
+  "RTL pages render every module with evidence labels and escaped learner code",
+  () => {
+    R.reset();
+    R.submit("and3", "</textarea><script>x</script>");
+    for (const m of R.modules) {
+      context.location.hash = "#rtl/" + m.id;
+      a.render(false);
+      const h = node("#main").innerHTML;
+      assert.ok(h.includes(`<h1>${m.title}</h1>`), m.id);
+      for (const part of [
+        "Worked example",
+        "Where this is used",
+        "References",
+        "Prerequisites",
+        "SiliconPath subset engine",
+      ])
+        assert.ok(h.includes(part), `${m.id} ${part}`);
+      assert.equal((h.match(/data-check=/g) || []).length, m.exercises.length);
+      assert.ok(!/undefined|NaN|\[object/.test(h), m.id);
+      assert.ok(
+        !h.includes("<script>x") && !h.includes("</textarea><script"),
+        m.id,
+      );
+      for (const id of m.sources)
+        assert.ok(
+          catalog.some((r) => r.id === id),
+          id,
+        );
+    }
+    context.location.hash = "#rtl/synthesis";
+    a.render(false);
+    assert.ok(
+      node("#main").innerHTML.includes("Yosys output") &&
+        node("#main").innerHTML.includes(context.window.RtlSynth.yosys),
+    );
+    context.location.hash = "#rtl";
+    a.render(false);
+    const h = node("#main").innerHTML;
+    assert.ok(
+      h.includes("What each result means") &&
+        h.includes("not FPGA implementation") === false,
+    );
+    assert.ok(h.includes("Nothing in this track is FPGA implementation"));
+    assert.ok(context.document.title.startsWith("RTL → Synthesis practice"));
+    assert.ok(a.deskText().includes("RTL → Synthesis: 0/13"));
+    R.reset();
+  },
+);
 const { scripts: manifestScripts, shipped } = await import("./files.mjs");
+const rtlSources = (
+  await Promise.all(
+    ["rtl.js", "rtl-engine.js", "practice.js"].map((f) =>
+      readFile(new URL("../" + f, import.meta.url), "utf8"),
+    ),
+  )
+).join("\n");
 const indexHtml = await readFile(
   new URL("../index.html", import.meta.url),
   "utf8",
@@ -1006,6 +1396,7 @@ check(
       guideSource,
       operationsSource,
       indexHtml,
+      rtlSources,
     ])
       assert.ok(!/\son[a-z]+=["']/i.test(src));
   },
