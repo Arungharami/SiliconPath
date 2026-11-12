@@ -1,32 +1,555 @@
-'use strict';
-const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const storage={read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}},write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{toast('Browser storage unavailable. Export your work before leaving.')}}};
-let resources=[],saved=storage.read('sp-saved',[]),completed=storage.read('sp-completed',[]),plan=storage.read('sp-plan',{institution:'',audience:'College / university students',model:'digital',cohort:12,tasks:[],notes:''});
-if(!Array.isArray(saved))saved=[];if(!Array.isArray(completed))completed=[];if(!plan||typeof plan!=='object'||Array.isArray(plan))plan={};plan={institution:'',audience:'College / university students',model:'digital',cohort:12,tasks:[],notes:'',...plan};if(!Array.isArray(plan.tasks))plan.tasks=[];plan.budget=cleanBudget(plan.budget);
-const paths=[
-{id:'foundations',title:'Start with the fundamentals',topic:'Foundations',level:'Beginner',description:'Build a language for chips, circuits and semiconductor devices.',prereq:'Basic algebra; no semiconductor background required.',outcome:'Explain the purpose of a chip, distinguish voltage and current, and describe a diode.',steps:[['See the bigger picture','A chip integrates electronic components into a small device. Start by relating chips to sensors, computers and communication systems.',['asml-chip','asml-process'],'Create a glossary of ten terms and draw the journey from wafer to packaged chip.'],['Build circuit foundations','Voltage describes electrical potential difference; current is the flow of charge. A device model connects terminal measurements with expected behavior.',['mit-circuits-video'],'Sketch a simple circuit and label voltage, current and resistance.'],['Meet semiconductor devices','Doping changes carrier populations. A p–n junction supports diode behavior; a MOS structure controls carriers through an electric field.',['nptel-devices','mit-devices'],'Compare a diode and a transistor in a short paragraph.']],quiz:['Which resource should come first for a learner new to electronics?',['An advanced scaling paper','An introductory circuits lesson','A fabrication equipment purchase'],1]},
-{id:'fabrication',title:'Understand how chips are made',topic:'Fabrication',level:'Intermediate',description:'Connect each manufacturing step to its purpose and learning requirements.',prereq:'Complete semiconductor foundations; basic chemistry and physics help.',outcome:'Map manufacturing stages and identify the difference between a classroom activity and an operating process lab.',steps:[['Map the manufacturing flow','Fabrication uses repeated material addition, patterning, material removal and treatment steps. Exact sequences depend on the device and technology.',['asml-process','asml-video'],'Create a process map with a purpose for each stage.'],['Explore patterning and processing','Lithography defines patterns. Processing courses connect patterning with oxidation, diffusion and deposition. Materials and recipes are process specific.',['asml-lithography','mit-processing'],'Build a table: process, purpose, equipment category and facility dependency.'],['Translate theory into a teaching plan','A virtual demonstration can explain a process without replicating industrial conditions. Physical process work needs trained supervision and approved facility procedures.',['mit-lab','niosh-manufacturing'],'Draft one simulated activity and list the approvals needed before a physical version.']],quiz:['What should precede selecting fabrication equipment?',['An approved learning scope and facility requirements','A realistic 3D picture alone','Choosing the lowest purchase price'],0]},
-{id:'devices',title:'Devices, measurement & testing',topic:'Testing',level:'Intermediate',description:'Connect device models with observations and assessment evidence.',prereq:'Circuit fundamentals and an introduction to semiconductor devices.',outcome:'Plan a supervised device measurement activity and explain model limitations.',steps:[['Select a device model','A model describes behavior under specified assumptions. A junction model is useful for understanding a diode, but its parameters and valid conditions matter.',['mit-devices','wiley-physics'],'List the model assumptions you would explain before an activity.'],['Design a measurement record','Document the device, instrument, measurement settings, units, observations and uncertainty. Instrument protection and approved limits belong in the supervised procedure.',['mit-lab'],'Create a blank measurement worksheet with units and space for uncertainty.'],['Interpret, do not just plot','A curve becomes evidence when learners connect its shape with the model and acknowledge differences, instrument effects and temperature.',['nptel-devices'],'Write a rubric for correct units, reasoning, repeatability and limitations.']],quiz:['Which record best supports reproducible testing?',['A photo of the lab only','A curve without axis labels','Device, settings, units and observations'],2]},
-{id:'design',title:'Explore chip design',topic:'Design',level:'Advanced',description:'Move from circuit reasoning toward device modeling and design tradeoffs.',prereq:'Circuit analysis and intermediate device physics.',outcome:'Explain how device assumptions affect a design and propose a simulation-based learning task.',steps:[['Understand device behavior','Design choices depend on device characteristics and circuit context. Review junction and MOS models before studying scaling.',['mit-devices'],'Identify three device properties that affect circuit behavior.'],['Study modern device concepts','Scaling and modern structures introduce new constraints. Use the book edition and chapter structure to select an appropriate reading sequence.',['cambridge-vlsi','mit-nano'],'Summarize one tradeoff and note where the model is limited.'],['Create a design study','Specify a learning objective, selected simulator and access conditions, inputs, expected observations and rubric. Tool availability must be verified locally.',['mit-devices'],'Draft a simulation project brief with reproducible settings.']],quiz:['How should a simulator result be reported?',['With model assumptions and conditions','As proof of manufactured performance','Without inputs'],0]},
-{id:'packaging',title:'Packaging, chiplets & research',topic:'Packaging',level:'Advanced',description:'Read technical reports critically and connect them with teaching questions.',prereq:'Device and manufacturing fundamentals.',outcome:'Distinguish research findings, workshop recommendations and unresolved questions.',steps:[['Start with a technical report','Chiplet interfaces create interoperability questions. A workshop report captures stakeholder discussions and priorities; it is not automatically an experimental validation.',['nist-chiplets'],'Record the publication type, DOI, date and main questions.'],['Connect data and trust','Digital twin data interoperability and supply-chain assurance involve technical and organizational concerns.',['nist-trust'],'Map one stated challenge to a possible teaching activity.'],['Write a critical reading note','Separate the problem, approach, evidence, limitation and application. State whether you read the full text or only the record.',['nist-twins','nist-pubs'],'Write a one-page reading note with page references.']],quiz:['A workshop recommendation should be labeled as:',['An experimentally proven universal result','A recommendation with its source and context','A certification requirement for every school'],1]},
-{id:'workforce',title:'Plan a semiconductor training center',topic:'Workforce',level:'Intermediate',description:'Turn educational goals into a scoped, reviewable pilot plan.',prereq:'Know your learners and intended institutional context.',outcome:'Produce a pilot brief connecting learners, skills, resources, responsibilities and evidence.',steps:[['Define the learners and outcomes','Select a learner group and a realistic skill target. Validate your proposed role-to-skill mapping with faculty and relevant employers.',['semi-workforce','semi-asa'],'Write three measurable learning outcomes and identify a reviewer.'],['Compare training choices','Course availability, access, price, prerequisites and certification conditions can change. Record current conditions before choosing a provider.',['semi-u'],'Compare two options using the same decision criteria.'],['Scope a feasible pilot','Begin with a digital classroom, a supervised testing lab or a defined fabrication scope. Identify facilities, staffing, access and ongoing costs.',['niosh-manufacturing'],'Use the center planner to export a faculty discussion brief.']],quiz:['What makes a pilot outcome measurable?',['A claim that students will be industry ready','A specified task, rubric and recorded evidence','The number of links in a library'],1]}
+"use strict";
+const $ = (s) => document.querySelector(s),
+  esc = (s) =>
+    String(s ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+const storage = {
+  read(k, f) {
+    try {
+      return JSON.parse(localStorage.getItem(k)) ?? f;
+    } catch {
+      return f;
+    }
+  },
+  write(k, v) {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+    } catch {
+      toast("Browser storage unavailable. Export your work before leaving.");
+    }
+  },
+};
+let resources = [],
+  saved = storage.read("sp-saved", []),
+  completed = storage.read("sp-completed", []),
+  plan = storage.read("sp-plan", {
+    institution: "",
+    audience: "College / university students",
+    model: "digital",
+    cohort: 12,
+    tasks: [],
+    notes: "",
+  });
+if (!Array.isArray(saved)) saved = [];
+if (!Array.isArray(completed)) completed = [];
+if (!plan || typeof plan !== "object" || Array.isArray(plan)) plan = {};
+plan = {
+  institution: "",
+  audience: "College / university students",
+  model: "digital",
+  cohort: 12,
+  tasks: [],
+  notes: "",
+  ...plan,
+};
+if (!Array.isArray(plan.tasks)) plan.tasks = [];
+plan.budget = cleanBudget(plan.budget);
+const paths = [
+  {
+    id: "foundations",
+    title: "Start with the fundamentals",
+    topic: "Foundations",
+    level: "Beginner",
+    description:
+      "Build a language for chips, circuits and semiconductor devices.",
+    prereq: "Basic algebra; no semiconductor background required.",
+    outcome:
+      "Explain the purpose of a chip, distinguish voltage and current, and describe a diode.",
+    steps: [
+      [
+        "See the bigger picture",
+        "A chip integrates electronic components into a small device. Start by relating chips to sensors, computers and communication systems.",
+        ["asml-chip", "asml-process"],
+        "Create a glossary of ten terms and draw the journey from wafer to packaged chip.",
+      ],
+      [
+        "Build circuit foundations",
+        "Voltage describes electrical potential difference; current is the flow of charge. A device model connects terminal measurements with expected behavior.",
+        ["mit-circuits-video"],
+        "Sketch a simple circuit and label voltage, current and resistance.",
+      ],
+      [
+        "Meet semiconductor devices",
+        "Doping changes carrier populations. A p–n junction supports diode behavior; a MOS structure controls carriers through an electric field.",
+        ["nptel-devices", "mit-devices"],
+        "Compare a diode and a transistor in a short paragraph.",
+      ],
+    ],
+    quiz: [
+      "Which resource should come first for a learner new to electronics?",
+      [
+        "An advanced scaling paper",
+        "An introductory circuits lesson",
+        "A fabrication equipment purchase",
+      ],
+      1,
+    ],
+  },
+  {
+    id: "fabrication",
+    title: "Understand how chips are made",
+    topic: "Fabrication",
+    level: "Intermediate",
+    description:
+      "Connect each manufacturing step to its purpose and learning requirements.",
+    prereq:
+      "Complete semiconductor foundations; basic chemistry and physics help.",
+    outcome:
+      "Map manufacturing stages and identify the difference between a classroom activity and an operating process lab.",
+    steps: [
+      [
+        "Map the manufacturing flow",
+        "Fabrication uses repeated material addition, patterning, material removal and treatment steps. Exact sequences depend on the device and technology.",
+        ["asml-process", "asml-video"],
+        "Create a process map with a purpose for each stage.",
+      ],
+      [
+        "Explore patterning and processing",
+        "Lithography defines patterns. Processing courses connect patterning with oxidation, diffusion and deposition. Materials and recipes are process specific.",
+        ["asml-lithography", "mit-processing"],
+        "Build a table: process, purpose, equipment category and facility dependency.",
+      ],
+      [
+        "Translate theory into a teaching plan",
+        "A virtual demonstration can explain a process without replicating industrial conditions. Physical process work needs trained supervision and approved facility procedures.",
+        ["mit-lab", "niosh-manufacturing"],
+        "Draft one simulated activity and list the approvals needed before a physical version.",
+      ],
+    ],
+    quiz: [
+      "What should precede selecting fabrication equipment?",
+      [
+        "An approved learning scope and facility requirements",
+        "A realistic 3D picture alone",
+        "Choosing the lowest purchase price",
+      ],
+      0,
+    ],
+  },
+  {
+    id: "devices",
+    title: "Devices, measurement & testing",
+    topic: "Testing",
+    level: "Intermediate",
+    description:
+      "Connect device models with observations and assessment evidence.",
+    prereq:
+      "Circuit fundamentals and an introduction to semiconductor devices.",
+    outcome:
+      "Plan a supervised device measurement activity and explain model limitations.",
+    steps: [
+      [
+        "Select a device model",
+        "A model describes behavior under specified assumptions. A junction model is useful for understanding a diode, but its parameters and valid conditions matter.",
+        ["mit-devices", "wiley-physics"],
+        "List the model assumptions you would explain before an activity.",
+      ],
+      [
+        "Design a measurement record",
+        "Document the device, instrument, measurement settings, units, observations and uncertainty. Instrument protection and approved limits belong in the supervised procedure.",
+        ["mit-lab"],
+        "Create a blank measurement worksheet with units and space for uncertainty.",
+      ],
+      [
+        "Interpret, do not just plot",
+        "A curve becomes evidence when learners connect its shape with the model and acknowledge differences, instrument effects and temperature.",
+        ["nptel-devices"],
+        "Write a rubric for correct units, reasoning, repeatability and limitations.",
+      ],
+    ],
+    quiz: [
+      "Which record best supports reproducible testing?",
+      [
+        "A photo of the lab only",
+        "A curve without axis labels",
+        "Device, settings, units and observations",
+      ],
+      2,
+    ],
+  },
+  {
+    id: "design",
+    title: "Explore chip design",
+    topic: "Design",
+    level: "Advanced",
+    description:
+      "Move from circuit reasoning toward device modeling and design tradeoffs.",
+    prereq: "Circuit analysis and intermediate device physics.",
+    outcome:
+      "Explain how device assumptions affect a design and propose a simulation-based learning task.",
+    steps: [
+      [
+        "Understand device behavior",
+        "Design choices depend on device characteristics and circuit context. Review junction and MOS models before studying scaling.",
+        ["mit-devices"],
+        "Identify three device properties that affect circuit behavior.",
+      ],
+      [
+        "Study modern device concepts",
+        "Scaling and modern structures introduce new constraints. Use the book edition and chapter structure to select an appropriate reading sequence.",
+        ["cambridge-vlsi", "mit-nano"],
+        "Summarize one tradeoff and note where the model is limited.",
+      ],
+      [
+        "Create a design study",
+        "Specify a learning objective, selected simulator and access conditions, inputs, expected observations and rubric. Tool availability must be verified locally.",
+        ["mit-devices"],
+        "Draft a simulation project brief with reproducible settings.",
+      ],
+    ],
+    quiz: [
+      "How should a simulator result be reported?",
+      [
+        "With model assumptions and conditions",
+        "As proof of manufactured performance",
+        "Without inputs",
+      ],
+      0,
+    ],
+  },
+  {
+    id: "packaging",
+    title: "Packaging, chiplets & research",
+    topic: "Packaging",
+    level: "Advanced",
+    description:
+      "Read technical reports critically and connect them with teaching questions.",
+    prereq: "Device and manufacturing fundamentals.",
+    outcome:
+      "Distinguish research findings, workshop recommendations and unresolved questions.",
+    steps: [
+      [
+        "Start with a technical report",
+        "Chiplet interfaces create interoperability questions. A workshop report captures stakeholder discussions and priorities; it is not automatically an experimental validation.",
+        ["nist-chiplets"],
+        "Record the publication type, DOI, date and main questions.",
+      ],
+      [
+        "Connect data and trust",
+        "Digital twin data interoperability and supply-chain assurance involve technical and organizational concerns.",
+        ["nist-trust"],
+        "Map one stated challenge to a possible teaching activity.",
+      ],
+      [
+        "Write a critical reading note",
+        "Separate the problem, approach, evidence, limitation and application. State whether you read the full text or only the record.",
+        ["nist-twins", "nist-pubs"],
+        "Write a one-page reading note with page references.",
+      ],
+    ],
+    quiz: [
+      "A workshop recommendation should be labeled as:",
+      [
+        "An experimentally proven universal result",
+        "A recommendation with its source and context",
+        "A certification requirement for every school",
+      ],
+      1,
+    ],
+  },
+  {
+    id: "workforce",
+    title: "Plan a semiconductor training center",
+    topic: "Workforce",
+    level: "Intermediate",
+    description: "Turn educational goals into a scoped, reviewable pilot plan.",
+    prereq: "Know your learners and intended institutional context.",
+    outcome:
+      "Produce a pilot brief connecting learners, skills, resources, responsibilities and evidence.",
+    steps: [
+      [
+        "Define the learners and outcomes",
+        "Select a learner group and a realistic skill target. Validate your proposed role-to-skill mapping with faculty and relevant employers.",
+        ["semi-workforce", "semi-asa"],
+        "Write three measurable learning outcomes and identify a reviewer.",
+      ],
+      [
+        "Compare training choices",
+        "Course availability, access, price, prerequisites and certification conditions can change. Record current conditions before choosing a provider.",
+        ["semi-u"],
+        "Compare two options using the same decision criteria.",
+      ],
+      [
+        "Scope a feasible pilot",
+        "Begin with a digital classroom, a supervised testing lab or a defined fabrication scope. Identify facilities, staffing, access and ongoing costs.",
+        ["niosh-manufacturing"],
+        "Use the center planner to export a faculty discussion brief.",
+      ],
+    ],
+    quiz: [
+      "What makes a pilot outcome measurable?",
+      [
+        "A claim that students will be industry ready",
+        "A specified task, rubric and recorded evidence",
+        "The number of links in a library",
+      ],
+      1,
+    ],
+  },
 ];
-const models={digital:{name:'Micro lab · Digital & introductory testing',description:'A compact teaching pilot for theory, circuit reasoning, simulation and optional supervised introductory testing.',equipment:['Computers and reliable internet','Locally verified simulation / EDA access','Display and accessible course materials','Version control and worksheet templates','Optional shared multimeter, current-limited supply, approved kits and ESD provisions'],facilities:['Teaching space and network access','Software licensing and account support','Accessibility and data handling arrangements'],activity:'A documented circuit or device simulation with inputs, assumptions and interpretation.',costs:['Computer access','Software / licensing where needed','Instruction and support','Resource review and maintenance','Optional instruments and supervision']},testing:{name:'Medium lab · Measurement & teaching',description:'A supervised learning space connecting electronic devices with measurement evidence.',equipment:['Digital multimeters','Current-limited bench power supplies','Oscilloscopes selected for learning scope','Approved device kits and ESD workstations'],facilities:['Reviewed electrical distribution and workspaces','Institution-approved supervision and procedures','Instrument maintenance and calibration arrangements'],activity:'A faculty-approved low-voltage device measurement with recorded units, settings and limitations.',costs:['Instruments and accessories','ESD controls and consumables','Calibration and maintenance','Supervision and training']},fabrication:{name:'Large lab · Specialist process facility',description:'An advanced option requiring a defined process scope and specialist facility review.',equipment:['Process tools selected after scope approval','Relevant metrology and inspection tools','Appropriate utilities and control systems','Approved material storage and waste arrangements'],facilities:['Institutional EHS and facilities review','Process-specific ventilation and utilities','Qualified operators and emergency arrangements','Permits and waste management where applicable'],activity:'A defined process demonstration approved for the actual facility and supervised by qualified personnel.',costs:['Facilities and infrastructure','Equipment installation and service','Materials and waste handling','Qualified staff and operating resources']}};
-const tasks=[['scope','Define learner group and measurable skills','A one-page scope with three outcomes.'],['curriculum','Map outcomes to modules and resources','A curriculum map with prerequisites and assessments.'],['validation','Request faculty / industry validation','Document reviewer feedback; do not assume endorsement.'],['inventory','Verify available equipment and access','Separate confirmed inventory from proposed purchases.'],['facility','Review facilities, safety and accessibility','Obtain the appropriate institutional reviews for the chosen model.'],['budget','Collect quotes and estimate operating costs','Record source, date, assumptions and recurring costs; no invented prices.'],['staff','Assign instruction and operational responsibilities','Identify instructors, lab supervision and technical support.'],['assessment','Create practical tasks and a rubric','Define evidence of learning, not just attendance.'],['pilot','Run a small, approved pilot','Record completion, learning evidence and usability feedback.'],['report','Review evidence and decide the next step','Document limitations, improvements and expansion dependencies.']];
-function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',2600)}
-function download(name,data,type='text/markdown'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function head(k,title,desc){return `<div class="page-head"><div class="eyebrow">${k}</div><h1>${title}</h1><p class="lead">${desc}</p></div>`}
-function pathCard(p,i){return `<a class="card" href="#path/${p.id}"><span class="number">PATH ${String(i+1).padStart(2,'0')}</span><h3>${p.title}</h3><p>${p.description}</p><span class="tag">${p.level}</span><div class="bottom"><span>3 study stages · 1 knowledge check</span><span>↗</span></div></a>`}
-function resourceCard(r){return `<article class="card resource"><span class="tag">${esc(r.kind)} · ${esc(r.topic)}</span><span class="provider">${esc(r.provider)}</span><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><span class="subtle">${esc(r.level)} · ${esc(r.access)}</span><div class="bottom"><button class="btn secondary small" data-detail="${r.id}">Study guide ↗</button><button class="save" data-save="${r.id}" aria-pressed="${saved.includes(r.id)}">${saved.includes(r.id)?'✓ Saved':'+ Save'}</button></div></article>`}
-function home(){return `<section class="initiative-home"><div><span class="eyebrow">NEW / FACULTY DISCUSSION + FUTURE DEVELOPMENT</span><h2>One pathway from learning to a future lab.</h2><p>Explore a possible FAU teaching concept and Arun’s proposed digital platform and two-lab expansion.</p></div><a class="btn" href="#initiative">View the development plan ↗</a></section><div class="wrap"><section class="hero"><div><div class="eyebrow">A living book. A practical pathway.</div><h1>From semiconductor<br><em>knowledge</em><br>to capability.</h1><p class="lead">Learn how chips work. Explore trusted resources. Plan a training center that connects study with practical skills.</p><div class="actions"><a class="btn" href="#start">Find your starting point <span>↗</span></a><a class="btn secondary" href="#planner">Plan a training center</a></div><p class="note">For curious learners, educators and institutions everywhere.</p><a class="text-link" href="#support">Semiconductor readiness & volunteer support ↗</a></div><div class="chip-scene" role="img" aria-label="Conceptual integrated circuit illustration"><span class="scene-tag">SILICONPATH / THE KNOWLEDGE ECOSYSTEM</span><div class="chip"><span>Si / PATH</span></div><div class="floating"><b>Read. Watch. Apply.</b>One connected learning journey.</div><div class="scene-bottom"><span>FOUNDATIONS → PRACTICE</span><span>CONCEPT ILLUSTRATION</span></div></div></section><section class="logic-home-callout"><div><span class="eyebrow">NEW · INTERACTIVE LEARNING</span><h2>Learn digital logic by experimenting.</h2><p>Toggle binary inputs, compare seven logic gates, and explore live truth tables in a browser-based circuit lab.</p></div><div class="actions"><a class="btn" href="#circuit">Open Digital Circuit Lab ↗</a><a class="btn secondary" href="#projects">Explore Projects ↗</a><a class="text-link" href="#code">Code library ↗</a></div></section>${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="eyebrow">PACKAGING & PCB LEARNING PILOT</span><h2>Explore the connections inside electronics.</h2><p class="subtle">Five interactive concept models, source-guided activities and your own learning notes. Rotate the parts and separate their layers.</p></div><a class="btn" href="#packaging">Open the learning pilot ↗</a></section><div class="stats"><div><b>${resources.length}</b><span>Curated starting resources</span></div><div><b>06</b><span>Guided learning paths</span></div><div><b>03</b><span>Training-center models</span></div><div><b>01</b><span>Connected study workspace</span></div></div><div class="section-top"><div><span class="eyebrow">Built around your purpose</span><h2>What brings you to SiliconPath?</h2></div><a class="text-link" href="#start">Choose a journey ↗</a></div><div class="grid audience-grid"><a class="card" href="#path/foundations"><span class="number">FOR LEARNERS</span><h3>Understand the field.</h3><p>Read, watch and apply concepts through a guided study path.</p><span class="text-link">Start with foundations ↗</span></a><a class="card" href="#faculty"><span class="number">FOR FACULTY</span><h3>Build a teachable module.</h3><p>Connect outcomes, resources, activities and assessment evidence.</p><span class="text-link">Open the faculty toolkit ↗</span></a><a class="card" href="#equipment"><span class="number">FOR LAB PLANNERS</span><h3>Make the scope concrete.</h3><p>Match equipment to skills, dependencies and quote-based costs.</p><span class="text-link">Explore equipment & costs ↗</span></a></div><section class="concrete-hero lab-entry"><div><span class="eyebrow">Explore the lab studio</span><h2>One idea. Three scales.</h2><p class="subtle">Walk through a micro teaching lab, a medium shared lab or a large research facility. Rotate the 3D scene and connect every station to its learning task.</p></div><a class="btn" href="#labs">Explore 3D workflows ↗</a></section><div class="section-top"><div><p class="eyebrow">Choose your starting point</p><h2>A clear path through a complex field.</h2></div><a class="text-link" href="#learn">All learning paths ↗</a></div><div class="grid">${paths.slice(0,3).map(pathCard).join('')}</div><div class="banner"><div><span class="eyebrow">For schools, colleges & universities</span><h2 style="margin-top:15px">Build the plan before you build the lab.</h2><p>Connect learner needs, curriculum, equipment, facilities and assessment in a faculty discussion brief.</p></div><div><a class="btn" href="#planner">Open the center planner ↗</a><p class="note">A planning framework with explicit dependencies.</p></div></div><div class="section-top"><div><p class="eyebrow">The study library</p><h2>Good sources. Clear context.</h2></div><a class="text-link" href="#library">Browse the library ↗</a></div><div class="grid">${resources.filter(r=>['asml-video','mit-devices','wiley-physics'].includes(r.id)).map(resourceCard).join('')}</div></div>`}
-function learn(){return `<div class="wrap">${head('The learning atlas','Learn with a sequence.','Every path connects an explanation, selected reading, an activity and a knowledge check. Progress is saved on this browser.')}<div class="grid">${paths.map(pathCard).join('')}</div><div class="callout">These are original study pathways, not accredited courses or industry certifications. Faculty review is pending.</div></div>`}
-function library(){return `<div class="wrap">${head('Books / videos / courses / research','Your semiconductor study library.','Find a credible starting source, understand why it matters, and save it to your study desk.')}<div class="format-shortcuts" aria-label="Browse resource format"><a href="#library/Book">Books</a><a href="#library/Video">Videos</a><a href="#library/Course">Courses</a><a href="#library/Paper">Papers</a><a href="#library/Report">Reports</a></div><div class="toolbar"><input id="search" type="search" aria-label="Search resources" placeholder="Search a topic, title or organization…"><select id="kind" aria-label="Resource type"><option value="">All formats</option>${[...new Set(resources.map(r=>r.kind))].map(x=>`<option>${x}</option>`).join('')}</select><select id="topic" aria-label="Topic"><option value="">All topics</option>${[...new Set(resources.map(r=>r.topic))].sort().map(x=>`<option>${x}</option>`).join('')}</select><select id="level" aria-label="Level"><option value="">All levels</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><label><input type="checkbox" id="only-saved"> Saved only</label></div><p id="result-count" class="subtle" role="status"></p><div id="resource-grid" class="grid"></div><div class="callout">Editorial notes are selection guidance based on source listings. Full-text and faculty review are pending. Books link to publishers; access may require purchase or institutional subscription. Reports and papers are labeled separately.</div></div>`}
-function filter(){const q=$('#search').value.toLowerCase().trim();const rs=resources.filter(r=>(!$('#kind').value||r.kind===$('#kind').value)&&(!$('#topic').value||r.topic===$('#topic').value)&&(!$('#level').value||r.level===$('#level').value)&&(!$('#only-saved').checked||saved.includes(r.id))&&[r.title,r.provider,r.topic,r.summary].join(' ').toLowerCase().includes(q));$('#result-count').textContent=`${rs.length} resource${rs.length===1?'':'s'} found`;$('#resource-grid').innerHTML=rs.length?rs.map(resourceCard).join(''):'<div class="empty">No matching resources. Try another topic or clear your filters.</div>'}
-function pathView(id){const p=paths.find(x=>x.id===id);if(!p)return notFound();const count=p.steps.filter((_,i)=>completed.includes(`${p.id}-${i}`)).length;return `<div class="wrap"><a class="text-link" href="#learn">← All learning paths</a>${head(`${p.level} / ${p.topic}`,p.title,p.description)}<div class="split"><aside class="sidebar"><h3>Your learning brief</h3><p class="subtle"><b>Prerequisites</b><br>${p.prereq}</p><p class="subtle"><b>Learning outcome</b><br>${p.outcome}</p><div class="progress"><span style="width:${count/3*100}%"></span></div><p class="subtle">${count} of 3 study stages marked complete</p><p class="subtle">Self-reported progress; not a verified credential.</p><a href="#workspace">Open your study desk ↗</a><button class="btn secondary small" data-export-path="${id}">Export study guide ↓</button></aside><section>${p.steps.map((s,i)=>`<article class="step"><span class="number">STAGE 0${i+1}</span><h3>${s[0]}</h3><p>${s[1]}</p><div class="reading-links">${s[2].map(id=>`<button class="btn secondary small" data-detail="${id}">${esc(resources.find(r=>r.id===id)?.title||id)} ↗</button>`).join('')}</div><p><b>Apply it:</b> ${s[3]}</p><label class="check"><input type="checkbox" data-complete="${p.id}-${i}" ${completed.includes(`${p.id}-${i}`)?'checked':''}><span>I completed this study stage and recorded my work.</span></label></article>`).join('')}<div class="quiz"><h3>Check your understanding</h3><p>${p.quiz[0]}</p><label class="subtle" for="quiz-answer">Choose an answer</label><select id="quiz-answer"><option value="">Select an answer…</option>${p.quiz[1].map((a,i)=>`<option value="${i}">${a}</option>`).join('')}</select><button class="btn small" data-quiz="${p.id}">Check answer</button><p id="quiz-feedback" role="status" style="margin:12px 0 0"></p></div><div class="actions"><a class="btn secondary" href="#workspace">Record your reflections ↗</a></div></section></div></div>`}
-function planner(){const m=models[plan.model]||models.digital;const percent=Math.round(tasks.filter(t=>plan.tasks.includes(t[0])).length/tasks.length*100);return `<div class="wrap">${head('Institutional planning toolkit','Plan a center with purpose.','Choose a micro, medium or large scope. Start with learners and outcomes. Build a reviewable brief for a school, college or university—then verify resources and requirements locally.')}<div class="split"><aside><div class="panel"><h3>Your pilot context</h3><a class="text-link" href="#equipment">Equipment guide & cost worksheet ↗</a><br><br><a class="text-link" href="#labs">Explore all three models in 3D ↗</a><br><br><div class="field"><label for="institution">School / institution</label><input id="institution" placeholder="Enter institution name" value="${esc(plan.institution)}"></div><div class="field" style="margin-top:15px"><label for="audience">Learner group</label><select id="audience">${['College / university students','School students','Technician trainees','Working professionals','Faculty / instructors'].map(x=>`<option ${x===plan.audience?'selected':''}>${x}</option>`).join('')}</select></div><div class="field" style="margin-top:15px"><label for="model">Starting model</label><select id="model">${Object.entries(models).map(([k,v])=>`<option value="${k}" ${plan.model===k?'selected':''}>${v.name}</option>`).join('')}</select></div><div class="field" style="margin-top:15px"><label for="cohort">Proposed cohort size</label><input id="cohort" type="number" min="1" max="1000" value="${esc(plan.cohort)}"></div><p class="subtle">A planning input; capacity must be verified from actual staffing, space and equipment.</p></div><div class="sidebar"><span class="eyebrow">Planning checklist</span><div class="big-count">${percent}%</div><div class="progress"><span style="width:${percent}%"></span></div><p class="subtle">Tasks marked by you. This is not an institutional readiness score.</p><button class="btn" id="export-plan">Export faculty brief ↓</button><button class="btn secondary small" id="print-plan" style="margin-top:10px">Print this plan</button></div></aside><section><div class="panel"><span class="tag">PROPOSED MODEL</span><h2 style="margin-top:15px">${m.name}</h2><p>${m.description}</p><div class="fields"><div><h3>Equipment categories</h3><ul>${m.equipment.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h3>Facility dependencies</h3><ul>${m.facilities.map(x=>`<li>${x}</li>`).join('')}</ul></div></div><p><b>Example learning activity:</b> ${m.activity}</p><p><b>Budget categories:</b> ${m.costs.join('; ')}.</p><div class="callout">Equipment examples are proposed categories, not a confirmed inventory or a purchasing specification. Planning content does not replace facility design, approved operating procedures or institutional review.</div></div><div class="panel"><h3>Ten steps from concept to pilot</h3>${tasks.map(t=>`<label class="check task"><input type="checkbox" data-task="${t[0]}" ${plan.tasks.includes(t[0])?'checked':''}><span><b>${t[1]}</b><small>${t[2]}</small></span></label>`).join('')}</div><div class="panel"><label for="plan-notes"><h3>Planning notes & open questions</h3></label><textarea id="plan-notes" placeholder="Record proposed outcomes, confirmed equipment, reviewers, quote sources and unresolved questions…">${esc(plan.notes)}</textarea><p class="subtle">Auto-saved on this browser. Export the brief to keep or share a copy.</p></div></section></div></div>`}
-function workspace(){const notes=storage.read('sp-notes','');const rs=resources.filter(r=>saved.includes(r.id));return `<div class="wrap">${head('Your personal study desk','Collect. Reflect. Connect.','Keep a reading list and research notes while you work through the learning paths. Your entries stay on this browser.')}<div class="actions" style="margin:0 0 30px"><button class="btn" id="export-desk">Export reading list & notes ↓</button><button class="btn secondary" id="export-backup">Back up workspace JSON ↓</button><label class="btn secondary">Restore backup<input type="file" id="import-backup" accept="application/json,.json" style="display:none"></label></div><div class="split"><aside class="sidebar"><h3>Learning progress</h3>${paths.map(p=>{const n=p.steps.filter((_,i)=>completed.includes(`${p.id}-${i}`)).length;return `<a href="#path/${p.id}">${p.title}<div class="progress"><span style="width:${n/3*100}%"></span></div><span class="subtle">${n}/3 stages</span></a>`}).join('')}<p class="subtle">Progress is self-reported and can be edited in each path.</p></aside><section><div class="panel"><label for="study-notes"><h3>Research & study notebook</h3></label><p class="subtle">Suggested structure: question → source → key idea → evidence → limitations → teaching application. Include page numbers and whether you read the full text.</p><textarea id="study-notes" placeholder="Write your study notes here…">${esc(notes)}</textarea><span class="subtle" id="notes-status">Saved locally; export for a durable copy.</span></div><h3>${rs.length} saved resources</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">${rs.length?rs.map(resourceCard).join(''):'<div class="empty">Your reading list is empty.<br><a class="text-link" href="#library">Find your first resource ↗</a></div>'}</div></section></div></div>`}
-function purposeSection(){return `<div class="section-top"><div><span class="eyebrow">Our purpose</span><h2>Knowledge that leads to practical progress.</h2></div><a class="text-link" href="#about">About SiliconPath ↗</a></div><div class="grid"><article class="panel"><span class="tag">MISSION</span><h3>Make the next step clear.</h3><p>Connect credible semiconductor learning with practical planning, digital tools and voluntary project support so learners and project teams can make informed decisions.</p></article><article class="panel"><span class="tag">VISION</span><h3>A pathway from curiosity to capability.</h3><p>A future where more learners and institutions can build semiconductor knowledge, develop supervised practical skills and contribute to well-documented projects.</p></article><article class="panel"><span class="tag">OUR SERVICE</span><h3>Turn ideas into reviewable work.</h3><p>Support project readiness, facility requirements, equipment research, workforce preparation, setup coordination and digital demonstrations.</p><a class="text-link" href="#support">Explore services & deliverables ↗</a></article></div>`}
-function about(){return `<div class="wrap">${head('About SiliconPath / Purpose, people & practice','From knowledge to a practical next step.','An independent educational and volunteer project initiative connecting semiconductor study, training-lab planning and digital systems.')}
+const models = {
+  digital: {
+    name: "Micro lab · Digital & introductory testing",
+    description:
+      "A compact teaching pilot for theory, circuit reasoning, simulation and optional supervised introductory testing.",
+    equipment: [
+      "Computers and reliable internet",
+      "Locally verified simulation / EDA access",
+      "Display and accessible course materials",
+      "Version control and worksheet templates",
+      "Optional shared multimeter, current-limited supply, approved kits and ESD provisions",
+    ],
+    facilities: [
+      "Teaching space and network access",
+      "Software licensing and account support",
+      "Accessibility and data handling arrangements",
+    ],
+    activity:
+      "A documented circuit or device simulation with inputs, assumptions and interpretation.",
+    costs: [
+      "Computer access",
+      "Software / licensing where needed",
+      "Instruction and support",
+      "Resource review and maintenance",
+      "Optional instruments and supervision",
+    ],
+  },
+  testing: {
+    name: "Medium lab · Measurement & teaching",
+    description:
+      "A supervised learning space connecting electronic devices with measurement evidence.",
+    equipment: [
+      "Digital multimeters",
+      "Current-limited bench power supplies",
+      "Oscilloscopes selected for learning scope",
+      "Approved device kits and ESD workstations",
+    ],
+    facilities: [
+      "Reviewed electrical distribution and workspaces",
+      "Institution-approved supervision and procedures",
+      "Instrument maintenance and calibration arrangements",
+    ],
+    activity:
+      "A faculty-approved low-voltage device measurement with recorded units, settings and limitations.",
+    costs: [
+      "Instruments and accessories",
+      "ESD controls and consumables",
+      "Calibration and maintenance",
+      "Supervision and training",
+    ],
+  },
+  fabrication: {
+    name: "Large lab · Specialist process facility",
+    description:
+      "An advanced option requiring a defined process scope and specialist facility review.",
+    equipment: [
+      "Process tools selected after scope approval",
+      "Relevant metrology and inspection tools",
+      "Appropriate utilities and control systems",
+      "Approved material storage and waste arrangements",
+    ],
+    facilities: [
+      "Institutional EHS and facilities review",
+      "Process-specific ventilation and utilities",
+      "Qualified operators and emergency arrangements",
+      "Permits and waste management where applicable",
+    ],
+    activity:
+      "A defined process demonstration approved for the actual facility and supervised by qualified personnel.",
+    costs: [
+      "Facilities and infrastructure",
+      "Equipment installation and service",
+      "Materials and waste handling",
+      "Qualified staff and operating resources",
+    ],
+  },
+};
+const tasks = [
+  [
+    "scope",
+    "Define learner group and measurable skills",
+    "A one-page scope with three outcomes.",
+  ],
+  [
+    "curriculum",
+    "Map outcomes to modules and resources",
+    "A curriculum map with prerequisites and assessments.",
+  ],
+  [
+    "validation",
+    "Request faculty / industry validation",
+    "Document reviewer feedback; do not assume endorsement.",
+  ],
+  [
+    "inventory",
+    "Verify available equipment and access",
+    "Separate confirmed inventory from proposed purchases.",
+  ],
+  [
+    "facility",
+    "Review facilities, safety and accessibility",
+    "Obtain the appropriate institutional reviews for the chosen model.",
+  ],
+  [
+    "budget",
+    "Collect quotes and estimate operating costs",
+    "Record source, date, assumptions and recurring costs; no invented prices.",
+  ],
+  [
+    "staff",
+    "Assign instruction and operational responsibilities",
+    "Identify instructors, lab supervision and technical support.",
+  ],
+  [
+    "assessment",
+    "Create practical tasks and a rubric",
+    "Define evidence of learning, not just attendance.",
+  ],
+  [
+    "pilot",
+    "Run a small, approved pilot",
+    "Record completion, learning evidence and usability feedback.",
+  ],
+  [
+    "report",
+    "Review evidence and decide the next step",
+    "Document limitations, improvements and expansion dependencies.",
+  ],
+];
+function toast(s) {
+  $("#toast").textContent = s;
+  $("#toast").style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => ($("#toast").style.display = "none"), 2600);
+}
+function download(name, data, type = "text/markdown") {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([data], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function head(k, title, desc) {
+  return `<div class="page-head"><div class="eyebrow">${k}</div><h1>${title}</h1><p class="lead">${desc}</p></div>`;
+}
+function pathCard(p, i) {
+  return `<a class="card" href="#path/${p.id}"><span class="number">PATH ${String(i + 1).padStart(2, "0")}</span><h3>${p.title}</h3><p>${p.description}</p><span class="tag">${p.level}</span><div class="bottom"><span>3 study stages · 1 knowledge check</span><span>↗</span></div></a>`;
+}
+function resourceCard(r) {
+  return `<article class="card resource"><span class="tag">${esc(r.kind)} · ${esc(r.topic)}</span><span class="provider">${esc(r.provider)}</span><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><span class="subtle">${esc(r.level)} · ${esc(r.access)}</span><div class="bottom"><button class="btn secondary small" data-detail="${r.id}">Study guide ↗</button><button class="save" data-save="${r.id}" aria-pressed="${saved.includes(r.id)}">${saved.includes(r.id) ? "✓ Saved" : "+ Save"}</button></div></article>`;
+}
+function home() {
+  return `<section class="initiative-home"><div><span class="eyebrow">NEW / FACULTY DISCUSSION + FUTURE DEVELOPMENT</span><h2>One pathway from learning to a future lab.</h2><p>Explore a possible FAU teaching concept and Arun’s proposed digital platform and two-lab expansion.</p></div><a class="btn" href="#initiative">View the development plan ↗</a></section><div class="wrap"><section class="hero"><div><div class="eyebrow">A living book. A practical pathway.</div><h1>From semiconductor<br><em>knowledge</em><br>to capability.</h1><p class="lead">Learn how chips work. Explore trusted resources. Plan a training center that connects study with practical skills.</p><div class="actions"><a class="btn" href="#start">Find your starting point <span>↗</span></a><a class="btn secondary" href="#planner">Plan a training center</a></div><p class="note">For curious learners, educators and institutions everywhere.</p><a class="text-link" href="#support">Semiconductor readiness & volunteer support ↗</a></div><div class="chip-scene" role="img" aria-label="Conceptual integrated circuit illustration"><span class="scene-tag">SILICONPATH / THE KNOWLEDGE ECOSYSTEM</span><div class="chip"><span>Si / PATH</span></div><div class="floating"><b>Read. Watch. Apply.</b>One connected learning journey.</div><div class="scene-bottom"><span>FOUNDATIONS → PRACTICE</span><span>CONCEPT ILLUSTRATION</span></div></div></section><section class="logic-home-callout"><div><span class="eyebrow">NEW · INTERACTIVE LEARNING</span><h2>Learn digital logic by experimenting.</h2><p>Toggle binary inputs, compare seven logic gates, and explore live truth tables in a browser-based circuit lab.</p></div><div class="actions"><a class="btn" href="#circuit">Open Digital Circuit Lab ↗</a><a class="btn secondary" href="#practice">Practice: Logic → CMOS ↗</a><a class="btn secondary" href="#rtl">Practice: RTL → Synthesis ↗</a><a class="btn secondary" href="#projects">Explore Projects ↗</a><a class="text-link" href="#code">Code library ↗</a></div></section>${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="eyebrow">PACKAGING & PCB LEARNING PILOT</span><h2>Explore the connections inside electronics.</h2><p class="subtle">Five interactive concept models, source-guided activities and your own learning notes. Rotate the parts and separate their layers.</p></div><a class="btn" href="#packaging">Open the learning pilot ↗</a></section><div class="stats"><div><b>${resources.length}</b><span>Curated starting resources</span></div><div><b>06</b><span>Guided learning paths</span></div><div><b>03</b><span>Training-center models</span></div><div><b>01</b><span>Connected study workspace</span></div></div><div class="section-top"><div><span class="eyebrow">Built around your purpose</span><h2>What brings you to SiliconPath?</h2></div><a class="text-link" href="#start">Choose a journey ↗</a></div><div class="grid audience-grid"><a class="card" href="#path/foundations"><span class="number">FOR LEARNERS</span><h3>Understand the field.</h3><p>Read, watch and apply concepts through a guided study path.</p><span class="text-link">Start with foundations ↗</span></a><a class="card" href="#faculty"><span class="number">FOR FACULTY</span><h3>Build a teachable module.</h3><p>Connect outcomes, resources, activities and assessment evidence.</p><span class="text-link">Open the faculty toolkit ↗</span></a><a class="card" href="#equipment"><span class="number">FOR LAB PLANNERS</span><h3>Make the scope concrete.</h3><p>Match equipment to skills, dependencies and quote-based costs.</p><span class="text-link">Explore equipment & costs ↗</span></a></div><section class="concrete-hero lab-entry"><div><span class="eyebrow">Explore the lab studio</span><h2>One idea. Three scales.</h2><p class="subtle">Walk through a micro teaching lab, a medium shared lab or a large research facility. Rotate the 3D scene and connect every station to its learning task.</p></div><a class="btn" href="#labs">Explore 3D workflows ↗</a></section><div class="section-top"><div><p class="eyebrow">Choose your starting point</p><h2>A clear path through a complex field.</h2></div><a class="text-link" href="#learn">All learning paths ↗</a></div><div class="grid">${paths.slice(0, 3).map(pathCard).join("")}</div><div class="banner"><div><span class="eyebrow">For schools, colleges & universities</span><h2 style="margin-top:15px">Build the plan before you build the lab.</h2><p>Connect learner needs, curriculum, equipment, facilities and assessment in a faculty discussion brief.</p></div><div><a class="btn" href="#planner">Open the center planner ↗</a><p class="note">A planning framework with explicit dependencies.</p></div></div><div class="section-top"><div><p class="eyebrow">The study library</p><h2>Good sources. Clear context.</h2></div><a class="text-link" href="#library">Browse the library ↗</a></div><div class="grid">${resources
+    .filter((r) =>
+      ["asml-video", "mit-devices", "wiley-physics"].includes(r.id),
+    )
+    .map(resourceCard)
+    .join("")}</div></div>`;
+}
+function learn() {
+  return `<div class="wrap">${head("The learning atlas", "Learn with a sequence.", "Every path connects an explanation, selected reading, an activity and a knowledge check. Progress is saved on this browser.")}<section class="concrete-hero lab-entry practice-entry"><div><span class="eyebrow">PRACTICE TRACK · AUTO-CHECKED</span><h2>Logic → CMOS</h2><p class="subtle">Five modules from truth tables to transistor-level gate design. Every answer is checked against every possible input, and passed exercises become exportable evidence.</p></div><a class="btn" href="#practice">Start practicing ↗</a></section><section class="concrete-hero lab-entry practice-entry"><div><span class="eyebrow">PRACTICE TRACK · AUTO-CHECKED</span><h2>RTL → Simulation → Synthesis</h2><p class="subtle">Six modules from your first Verilog module to a verified 4-bit counter: write RTL in the browser, catch bugs with your own test vectors, read waveforms and real Yosys output, and download a project you can run with open-source tools.</p></div><a class="btn" href="#rtl">Start the RTL track ↗</a></section><div class="grid">${paths.map(pathCard).join("")}</div><div class="callout">These are original study pathways, not accredited courses or industry certifications. Faculty review is pending.</div></div>`;
+}
+function library() {
+  return `<div class="wrap">${head("Books / videos / courses / research", "Your semiconductor study library.", "Find a credible starting source, understand why it matters, and save it to your study desk.")}<div class="format-shortcuts" aria-label="Browse resource format"><a href="#library/Book">Books</a><a href="#library/Video">Videos</a><a href="#library/Course">Courses</a><a href="#library/Paper">Papers</a><a href="#library/Report">Reports</a></div><div class="toolbar"><input id="search" type="search" aria-label="Search resources" placeholder="Search a topic, title or organization…"><select id="kind" aria-label="Resource type"><option value="">All formats</option>${[...new Set(resources.map((r) => r.kind))].map((x) => `<option>${x}</option>`).join("")}</select><select id="topic" aria-label="Topic"><option value="">All topics</option>${[
+    ...new Set(resources.map((r) => r.topic)),
+  ]
+    .sort()
+    .map((x) => `<option>${x}</option>`)
+    .join(
+      "",
+    )}</select><select id="level" aria-label="Level"><option value="">All levels</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><label><input type="checkbox" id="only-saved"> Saved only</label></div><p id="result-count" class="subtle" role="status"></p><div id="resource-grid" class="grid"></div><div class="callout">Editorial notes are selection guidance based on source listings. Full-text and faculty review are pending. Books link to publishers; access may require purchase or institutional subscription. Reports and papers are labeled separately.</div></div>`;
+}
+function filter() {
+  const q = $("#search").value.toLowerCase().trim();
+  const rs = resources.filter(
+    (r) =>
+      (!$("#kind").value || r.kind === $("#kind").value) &&
+      (!$("#topic").value || r.topic === $("#topic").value) &&
+      (!$("#level").value || r.level === $("#level").value) &&
+      (!$("#only-saved").checked || saved.includes(r.id)) &&
+      [r.title, r.provider, r.topic, r.summary]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+  );
+  $("#result-count").textContent =
+    `${rs.length} resource${rs.length === 1 ? "" : "s"} found`;
+  $("#resource-grid").innerHTML = rs.length
+    ? rs.map(resourceCard).join("")
+    : '<div class="empty">No matching resources. Try another topic or clear your filters.</div>';
+}
+function pathView(id) {
+  const p = paths.find((x) => x.id === id);
+  if (!p) return notFound();
+  const count = p.steps.filter((_, i) =>
+    completed.includes(`${p.id}-${i}`),
+  ).length;
+  return `<div class="wrap"><a class="text-link" href="#learn">← All learning paths</a>${head(`${p.level} / ${p.topic}`, p.title, p.description)}<div class="split"><aside class="sidebar"><h3>Your learning brief</h3><p class="subtle"><b>Prerequisites</b><br>${p.prereq}</p><p class="subtle"><b>Learning outcome</b><br>${p.outcome}</p><div class="progress"><span style="width:${(count / 3) * 100}%"></span></div><p class="subtle">${count} of 3 study stages marked complete</p><p class="subtle">Self-reported progress; not a verified credential.</p><a href="#workspace">Open your study desk ↗</a><button class="btn secondary small" data-export-path="${id}">Export study guide ↓</button></aside><section>${p.steps.map((s, i) => `<article class="step"><span class="number">STAGE 0${i + 1}</span><h3>${s[0]}</h3><p>${s[1]}</p><div class="reading-links">${s[2].map((id) => `<button class="btn secondary small" data-detail="${id}">${esc(resources.find((r) => r.id === id)?.title || id)} ↗</button>`).join("")}</div><p><b>Apply it:</b> ${s[3]}</p><label class="check"><input type="checkbox" data-complete="${p.id}-${i}" ${completed.includes(`${p.id}-${i}`) ? "checked" : ""}><span>I completed this study stage and recorded my work.</span></label></article>`).join("")}<div class="quiz"><h3>Check your understanding</h3><p>${p.quiz[0]}</p><label class="subtle" for="quiz-answer">Choose an answer</label><select id="quiz-answer"><option value="">Select an answer…</option>${p.quiz[1].map((a, i) => `<option value="${i}">${a}</option>`).join("")}</select><button class="btn small" data-quiz="${p.id}">Check answer</button><p id="quiz-feedback" role="status" style="margin:12px 0 0"></p></div><div class="actions"><a class="btn secondary" href="#workspace">Record your reflections ↗</a></div></section></div></div>`;
+}
+function planner() {
+  const m = models[plan.model] || models.digital;
+  const percent = Math.round(
+    (tasks.filter((t) => plan.tasks.includes(t[0])).length / tasks.length) *
+      100,
+  );
+  return `<div class="wrap">${head("Institutional planning toolkit", "Plan a center with purpose.", "Choose a micro, medium or large scope. Start with learners and outcomes. Build a reviewable brief for a school, college or university—then verify resources and requirements locally.")}<div class="split"><aside><div class="panel"><h3>Your pilot context</h3><a class="text-link" href="#equipment">Equipment guide & cost worksheet ↗</a><br><br><a class="text-link" href="#labs">Explore all three models in 3D ↗</a><br><br><div class="field"><label for="institution">School / institution</label><input id="institution" placeholder="Enter institution name" value="${esc(plan.institution)}"></div><div class="field" style="margin-top:15px"><label for="audience">Learner group</label><select id="audience">${["College / university students", "School students", "Technician trainees", "Working professionals", "Faculty / instructors"].map((x) => `<option ${x === plan.audience ? "selected" : ""}>${x}</option>`).join("")}</select></div><div class="field" style="margin-top:15px"><label for="model">Starting model</label><select id="model">${Object.entries(
+    models,
+  )
+    .map(
+      ([k, v]) =>
+        `<option value="${k}" ${plan.model === k ? "selected" : ""}>${v.name}</option>`,
+    )
+    .join(
+      "",
+    )}</select></div><div class="field" style="margin-top:15px"><label for="cohort">Proposed cohort size</label><input id="cohort" type="number" min="1" max="1000" value="${esc(plan.cohort)}"></div><p class="subtle">A planning input; capacity must be verified from actual staffing, space and equipment.</p></div><div class="sidebar"><span class="eyebrow">Planning checklist</span><div class="big-count">${percent}%</div><div class="progress"><span style="width:${percent}%"></span></div><p class="subtle">Tasks marked by you. This is not an institutional readiness score.</p><button class="btn" id="export-plan">Export faculty brief ↓</button><button class="btn secondary small" id="print-plan" style="margin-top:10px">Print this plan</button></div></aside><section><div class="panel"><span class="tag">PROPOSED MODEL</span><h2 style="margin-top:15px">${m.name}</h2><p>${m.description}</p><div class="fields"><div><h3>Equipment categories</h3><ul>${m.equipment.map((x) => `<li>${x}</li>`).join("")}</ul></div><div><h3>Facility dependencies</h3><ul>${m.facilities.map((x) => `<li>${x}</li>`).join("")}</ul></div></div><p><b>Example learning activity:</b> ${m.activity}</p><p><b>Budget categories:</b> ${m.costs.join("; ")}.</p><div class="callout">Equipment examples are proposed categories, not a confirmed inventory or a purchasing specification. Planning content does not replace facility design, approved operating procedures or institutional review.</div></div><div class="panel"><h3>Ten steps from concept to pilot</h3>${tasks.map((t) => `<label class="check task"><input type="checkbox" data-task="${t[0]}" ${plan.tasks.includes(t[0]) ? "checked" : ""}><span><b>${t[1]}</b><small>${t[2]}</small></span></label>`).join("")}</div><div class="panel"><label for="plan-notes"><h3>Planning notes & open questions</h3></label><textarea id="plan-notes" placeholder="Record proposed outcomes, confirmed equipment, reviewers, quote sources and unresolved questions…">${esc(plan.notes)}</textarea><p class="subtle">Auto-saved on this browser. Export the brief to keep or share a copy.</p></div></section></div></div>`;
+}
+function workspace() {
+  const notes = storage.read("sp-notes", "");
+  const rs = resources.filter((r) => saved.includes(r.id));
+  return `<div class="wrap">${head("Your personal study desk", "Collect. Reflect. Connect.", "Keep a reading list and research notes while you work through the learning paths. Your entries stay on this browser.")}<div class="actions" style="margin:0 0 30px"><button class="btn" id="export-desk">Export reading list & notes ↓</button><button class="btn secondary" id="export-backup">Back up workspace JSON ↓</button><label class="btn secondary">Restore backup<input type="file" id="import-backup" accept="application/json,.json" style="display:none"></label></div><div class="split"><aside class="sidebar"><h3>Learning progress</h3>${paths
+    .map((p) => {
+      const n = p.steps.filter((_, i) =>
+        completed.includes(`${p.id}-${i}`),
+      ).length;
+      return `<a href="#path/${p.id}">${p.title}<div class="progress"><span style="width:${(n / 3) * 100}%"></span></div><span class="subtle">${n}/3 stages</span></a>`;
+    })
+    .join(
+      "",
+    )}<p class="subtle">Progress is self-reported and can be edited in each path.</p>${practiceSummaryHtml()}</aside><section><div class="panel"><label for="study-notes"><h3>Research & study notebook</h3></label><p class="subtle">Suggested structure: question → source → key idea → evidence → limitations → teaching application. Include page numbers and whether you read the full text.</p><textarea id="study-notes" placeholder="Write your study notes here…">${esc(notes)}</textarea><span class="subtle" id="notes-status">Saved locally; export for a durable copy.</span></div><h3>${rs.length} saved resources</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">${rs.length ? rs.map(resourceCard).join("") : '<div class="empty">Your reading list is empty.<br><a class="text-link" href="#library">Find your first resource ↗</a></div>'}</div></section></div></div>`;
+}
+// Auto-checked practice tracks: [backup key, module, label, route].
+function practiceTracks() {
+  return [
+    ["practice", window.PracticeTrack, "Logic → CMOS", "practice"],
+    ["rtl", window.RtlTrack, "RTL → Synthesis", "rtl"],
+  ].filter((t) => t[1]);
+}
+function practiceSummaryHtml() {
+  const tracks = practiceTracks();
+  if (!tracks.length) return "";
+  return `<h3>Practice evidence</h3>${tracks
+    .map(([, t, label, route]) => {
+      const s = t.summary();
+      return `<a href="#${route}">${label}<div class="progress"><span style="width:${(s.done / s.total) * 100}%"></span></div><span class="subtle">${s.done}/${s.total} exercises passed</span></a>`;
+    })
+    .join(
+      "",
+    )}<p class="subtle">Checked automatically from your saved answers.</p>`;
+}
+function purposeSection() {
+  return `<div class="section-top"><div><span class="eyebrow">Our purpose</span><h2>Knowledge that leads to practical progress.</h2></div><a class="text-link" href="#about">About SiliconPath ↗</a></div><div class="grid"><article class="panel"><span class="tag">MISSION</span><h3>Make the next step clear.</h3><p>Connect credible semiconductor learning with practical planning, digital tools and voluntary project support so learners and project teams can make informed decisions.</p></article><article class="panel"><span class="tag">VISION</span><h3>A pathway from curiosity to capability.</h3><p>A future where more learners and institutions can build semiconductor knowledge, develop supervised practical skills and contribute to well-documented projects.</p></article><article class="panel"><span class="tag">OUR SERVICE</span><h3>Turn ideas into reviewable work.</h3><p>Support project readiness, facility requirements, equipment research, workforce preparation, setup coordination and digital demonstrations.</p><a class="text-link" href="#support">Explore services & deliverables ↗</a></article></div>`;
+}
+function about() {
+  return `<div class="wrap">${head("About SiliconPath / Purpose, people & practice", "From knowledge to a practical next step.", "An independent educational and volunteer project initiative connecting semiconductor study, training-lab planning and digital systems.")}
 <section class="concrete-hero"><div><span class="eyebrow">A living study book for semiconductor education</span><h2>Learn. Plan. Contribute.</h2><p class="lead">SiliconPath brings resources, learning activities, lab concepts and project support into one place. It helps people understand the field and prepare a scoped pilot with clear responsibilities and evidence.</p><div class="actions"><a class="btn" href="#start">Find your starting point ↗</a><a class="btn secondary" href="#support">Explore volunteer services</a></div></div></section>
 ${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="eyebrow">PACKAGING & PCB LEARNING PILOT</span><h2>Explore the connections inside electronics.</h2><p class="subtle">Five interactive concept models, source-guided activities and your own learning notes. Rotate the parts and separate their layers.</p></div><a class="btn" href="#packaging">Open the learning pilot ↗</a></section>
 <div class="section-top"><div><span class="eyebrow">The problem we address</span><h2>Bridge the gap between an idea and a usable plan.</h2></div></div><div class="grid"><article class="card"><h3>Information is scattered.</h3><p>Learners need a sequence and context, alongside sources. Our pathways connect explanations, original resources, activities and reflection.</p></article><article class="card"><h3>Lab ambitions need definition.</h3><p>A lab idea needs learning outcomes, space and equipment requirements, operating responsibilities and a realistic review process. Our tools help make those questions explicit.</p></article><article class="card"><h3>Projects need organized evidence.</h3><p>Teams need to trace assumptions, decisions, sources and open actions. Our volunteer support focuses on bounded deliverables that others can review and reuse.</p></article></div>
@@ -38,8 +561,10 @@ ${purposeSection()}<section class="concrete-hero lab-entry"><div><span class="ey
 <section class="concrete-hero"><span class="eyebrow">Development roadmap / Proposed priorities</span><h2>Build depth through reviewed pilots.</h2><ol><li><b>Content validation:</b> obtain agreed subject review of the first learning modules and planning assumptions.</li><li><b>First pilot:</b> scope one training-lab readiness study or digital demonstration with a willing host.</li><li><b>Documented case studies:</b> publish permitted evidence of roles, outputs, feedback and lessons learned.</li><li><b>Refinement:</b> improve equipment mappings, learning activities, accessibility and handover materials.</li><li><b>Future collaboration tools:</b> consider shared accounts and instructor workflows after requirements, ownership and data handling are agreed.</li></ol><p class="subtle">These priorities are aspirations, not funded commitments, confirmed partnerships or delivery dates.</p></section>
 <section class="panel"><span class="eyebrow">Sources & editorial policy</span><h2>Make the basis of each claim visible.</h2><ul><li>Prefer universities, publishers, government research organizations and original industry sources.</li><li>Separate books, papers, reports, courses and videos; preserve publication type and context.</li><li>Show access conditions, identified publication dates and source-listing check dates.</li><li>Current resource notes summarize source listings. Full-content and faculty review are pending; no faculty endorsement is claimed.</li><li>Verify current prices, course availability, access, certificates and lead times with the provider before a decision.</li><li>Link to authorized materials and respect permission requirements for third-party assets and project evidence.</li><li>Record corrections, uncertainty and limitations. Project feedback can be sent to the contact email with the page, claim and supporting source.</li></ul><p>SiliconPath does not deliver accredited instruction, verify practical competence or issue recognized certificates.</p></section>
 <section class="panel"><span class="eyebrow">Data & project information</span><h2>Keep your work portable.</h2><p>Reading lists, notes and planner entries are saved only in your current browser. No login or cloud synchronization is provided. Export and restore functions let you keep a portable copy. Project inquiry entries are not saved after leaving the page; downloads stay with you, and email drafts are sent only through your email application.</p><p>Do not enter confidential student, employee, proprietary process or institutional records into this public planning platform. Any engagement handling sensitive information needs an agreed host-approved workspace and access controls.</p></section>
-<section class="panel"><span class="eyebrow">Project identity</span><h2>Independent and open to discussion.</h2><p>Independent educational project · Prepared for faculty discussion,<br>No institutional affiliation, endorsement, accreditation or certification is implied.</p><p>SiliconPath is an educational and project-support initiative. Volunteer capacity, responsibilities, external costs and any separately requested consulting terms are agreed for each engagement.</p><div class="actions"><a class="btn" href="#support">Prepare a project inquiry ↗</a><a class="btn secondary" href="mailto:arun_gharami@live.com?subject=SiliconPath%20project%20discussion">Contact Arun ↗</a></div></section></div>`}
-function support(){return `<div class="wrap">${head('Voluntary project support / Semiconductor readiness','Move from an idea to a reviewed pilot.','SiliconPath helps education and early industry initiatives organize facility requirements, workforce preparation, project evidence and digital tools. Start with one useful, clearly scoped contribution.')}
+<section class="panel"><span class="eyebrow">Project identity</span><h2>Independent and open to discussion.</h2><p>Independent educational project · Prepared for faculty discussion,<br>No institutional affiliation, endorsement, accreditation or certification is implied.</p><p>SiliconPath is an educational and project-support initiative. Volunteer capacity, responsibilities, external costs and any separately requested consulting terms are agreed for each engagement.</p><div class="actions"><a class="btn" href="#support">Prepare a project inquiry ↗</a><a class="btn secondary" href="mailto:arun_gharami@live.com?subject=SiliconPath%20project%20discussion">Contact Arun ↗</a></div></section></div>`;
+}
+function support() {
+  return `<div class="wrap">${head("Voluntary project support / Semiconductor readiness", "Move from an idea to a reviewed pilot.", "SiliconPath helps education and early industry initiatives organize facility requirements, workforce preparation, project evidence and digital tools. Start with one useful, clearly scoped contribution.")}
 <section class="concrete-hero"><div><span class="eyebrow">SEMICONDUCTOR READINESS & VOLUNTEER PROJECT SUPPORT</span><h2>Plan facilities. Prepare people. Connect knowledge.</h2><p class="lead">Practical support for training labs, electronics assembly and testing initiatives, and early semiconductor facility studies.</p><div class="actions"><button class="btn" id="support-inquiry" type="button">Prepare a project inquiry ↗</button><a class="btn secondary" href="#operations/micro">Explore a lab pilot</a></div><p class="subtle">Project lead: <a href="https://www.arungharami.info/" target="_blank" rel="noopener noreferrer">Arun Kumar Gharami ↗</a> · Volunteer Project Coordinator — Semiconductor Readiness & Digital Systems</p></div></section>
 <div class="section-top"><div><span class="eyebrow">A practical service portfolio</span><h2>Choose the output your project needs.</h2></div></div>
 <div class="grid">
@@ -76,40 +601,450 @@ function support(){return `<div class="wrap">${head('Voluntary project support /
 <label class="field">Project owner and reviewer<input name="reviewer" maxlength="300" placeholder="Name / role, or reviewer still needed"></label>
 <label class="field">Questions for an invited reviewer<textarea name="questions" maxlength="2000" placeholder="Learning, workflow, engineering or assessment questions"></textarea></label>
 </div><div class="actions"><button class="btn" type="submit">Download project brief ↓</button><button class="btn secondary" type="button" id="support-email">Open email draft ↗</button></div><p id="support-status" role="status" class="subtle"></p></form><p>Prefer to write directly? <a class="text-link" href="mailto:arun_gharami@live.com?subject=SiliconPath%20volunteer%20project%20inquiry">arun_gharami@live.com ↗</a></p></section>
-<div class="callout">Independent educational project · Prepared for faculty discussion,<br>No institutional affiliation, endorsement, accreditation or certification is implied.</div></div>`}
-function supportBrief(v){const modes={hybrid:'Hybrid: voluntary + separately agreed specialist support',consulting:'Project consulting discussion',voluntary:'Voluntary contribution proposal'};const value=k=>String(v[k]||'Not specified');return `# SiliconPath — Semiconductor Readiness Project Brief\n\nProject lead: Arun Kumar Gharami\nRole: Volunteer Project Coordinator — Semiconductor Readiness & Digital Systems\nhttps://www.arungharami.info/\nContact: arun_gharami@live.com\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nStatus: discussion draft; not a submitted request or confirmed engagement.\n\nProject: ${value('project')}\nOrganization: ${value('organization')}\nLocation: ${value('location')}\nContact: ${value('contact')}\nContact email: ${value('email')}\nProject type: ${value('type')}\nCurrent stage: ${value('stage')}\nSupport model: ${modes[v.mode]||modes.voluntary}\nLab scale: ${value('scale')}\nUsers / learners: ${value('learners')}\nProject owner / reviewer: ${value('reviewer')}\n\n## Goal and requested deliverables\n${value('goal')}\n\n## Resources, budget and timing constraints\n${value('constraints')}\n\n## Proposed voluntary contribution\n${value('task')}\n\n## Questions for an invited reviewer\n${value('questions')}\n\n## Proposed pilot milestones (dates to agree)\n1. Define scope, responsibilities and success criteria.\n2. Document resources, workflow and specialist requirements.\n3. Compare alternatives and demonstrate one digital tool.\n4. Review, revise and hand over the pilot package.\n\n## Agreement checklist\n- Confirm participants and their acceptance; no faculty availability is confirmed.\n- Agree scope, volunteer capacity, deliverables, acceptance criteria, dates and dependencies.\n- Assign a project owner and qualified reviewers for relevant technical decisions.\n- Agree external costs, any separate consulting fees, contributor credit and reuse permissions.\n- Record sources, decisions, limitations and handover requirements.\n- Voluntary participation is optional; no job, academic credit or certificate is promised.\n\nEquipment settings, production recipes, engineering design, installation, commissioning and safety approval remain with qualified engineers, equipment vendors and the responsible facility team.\nThis draft does not authorize lab operation or commit any professor or institution to provide services.\n`}
-function bindSupport(){const form=$('#support-form');if(!form)return;const jump=$('#support-inquiry');if(jump)jump.onclick=()=>{$('#support-request').scrollIntoView({behavior:'smooth'});form.elements.project.focus({preventScroll:true})};const values=()=>Object.fromEntries(new FormData(form));form.onsubmit=e=>{e.preventDefault();if(!form.reportValidity())return;download('SiliconPath_Project_Discussion_Brief.md',supportBrief(values()));$('#support-status').textContent='Brief downloaded. No request has been sent; share it after reviewing the details.'};const email=$('#support-email');if(email)email.onclick=()=>{if(!form.reportValidity())return;const v=values();const body=`SiliconPath volunteer project inquiry\n\nProject: ${v.project}\nOrganization: ${v.organization}\nLocation: ${v.location}\nContact: ${v.contact} (${v.email})\nType / stage: ${v.type} / ${v.stage}\n\nRequested deliverables: ${v.goal}\n\nPlease see my downloaded project brief for constraints, tasks and review questions.`;const a=document.createElement('a');a.href='mailto:arun_gharami@live.com?subject='+encodeURIComponent('SiliconPath volunteer inquiry: '+v.project)+'&body='+encodeURIComponent(body);a.click();$('#support-status').textContent='Email draft requested in your email app. Attach the downloaded brief, review it and send it there.'}}
-function notFound(){return `<div class="wrap">${head('Page not found','Choose a learning path.','This address does not match a SiliconPath page.')}<a class="btn" href="#home">Return home</a></div>`}
-function showDetail(id){const r=resources.find(x=>x.id===id);if(!r)return;const d=$('#resource-dialog');d.innerHTML=`<button class="dialog-close" id="close-dialog" aria-label="Close resource details">×</button><span class="tag">${esc(r.kind)} / ${esc(r.topic)}</span><h2 id="dialog-title" style="margin-top:20px">${esc(r.title)}</h2><p class="subtle">${esc(r.provider)}</p><p>${esc(r.summary)}</p><div class="callout"><b>How to use it</b><br>${esc(r.use)}</div><div class="dialog-meta"><div><b>Level</b>${esc(r.level)}</div><div><b>Access</b>${esc(r.access)}</div><div><b>Publication year</b>${esc(r.year||'Check original source')}</div><div><b>Listing checked</b>${esc(r.checked)}</div><div style="grid-column:1/-1"><b>Review status</b>${esc(r.review)}</div>${r.doi?`<div><b>DOI</b>${esc(r.doi)}</div>`:''}</div><p class="subtle">Follow the original source for full details, current availability and usage rights.</p><div class="actions"><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Open original source ↗</a><button class="btn secondary" data-save="${r.id}" aria-pressed="${saved.includes(r.id)}">${saved.includes(r.id)?'✓ Saved':'+ Save to reading list'}</button></div>`;if(!d.open)d.showModal();$('#close-dialog').onclick=()=>d.close()}
-function toggleSave(id){saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];storage.write('sp-saved',saved);document.querySelectorAll(`[data-save="${id}"]`).forEach(b=>{b.textContent=saved.includes(id)?'✓ Saved':'+ Save';b.setAttribute('aria-pressed',String(saved.includes(id)))});if(location.hash==='#workspace')render(false);if($('#only-saved')?.checked)filter();toast(saved.includes(id)?'Added to your study desk':'Removed from reading list')}
-function budgetSummary(){const b=plan.budget||{};const val=k=>Math.max(0,Number(b[k])||0);const keys=['purchase','installation','software','service','consumables','staff'];const count=keys.filter(k=>b[k]!==''&&b[k]!==undefined).length;const one=val('purchase')+val('installation');const annual=val('software')+val('service')+val('consumables')+val('staff');return {one,annual,first:one+annual,count}}
-function budgetText(){const b=plan.budget||{},t=budgetSummary();if(!t.count&&!b.notes)return '';return '\n## Quote-based budget worksheet (USD)\n'+['purchase','installation','software','service','consumables','staff'].map(k=>k+': '+(b[k]!==undefined&&b[k]!==''?b[k]:'Not specified')).join('\n')+'\nEntered one-time subtotal: '+t.one.toFixed(2)+'\nEntered annual subtotal: '+t.annual.toFixed(2)+'\nEntered first-year subtotal: '+t.first.toFixed(2)+'\nSources / assumptions: '+(b.notes||'Not specified')+'\nSubtotals include only entered categories; not a complete budget.\n'}
-function brief(){const m=models[plan.model]||models.digital;return `# SiliconPath — Training-center pilot brief\n\nCreated and curated by Arun Kumar Gharami ↗\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nContact: arun_gharami@live.com\n\nPlanning draft; institutional review required.\n\nInstitution: ${plan.institution||'Not specified'}\nLearners: ${plan.audience}\nProposed cohort: ${plan.cohort}\nModel: ${m.name}\n\n## Purpose\n${m.description}\n\n## Equipment categories (proposed)\n${m.equipment.map(x=>'- '+x).join('\n')}\n\n## Facility dependencies\n${m.facilities.map(x=>'- '+x).join('\n')}\n\n## Example activity\n${m.activity}\n\n## Budget categories — quotes needed\n${m.costs.map(x=>'- '+x).join('\n')}\n\n## Planning checklist\n${tasks.map(t=>`- [${plan.tasks.includes(t[0])?'x':' '}] ${t[1]}: ${t[2]}`).join('\n')}\n\n## Notes and open questions\n${plan.notes||'No notes entered.'}\n${budgetText()}\nChecklist progress is self-reported, not a readiness assessment. Equipment availability, capacity, curriculum, safety and costs must be verified locally.\n`}
-function deskText(){return `# SiliconPath — Study notebook\n\nCreated and curated by Arun Kumar Gharami ↗\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nContact: arun_gharami@live.com\n\n## Saved resources\n${resources.filter(r=>saved.includes(r.id)).map(r=>`- ${r.title} — ${r.provider}\n  ${r.url}\n  ${r.review}`).join('\n')}\n\n## Notes\n${storage.read('sp-notes','')}\n\n## Self-reported progress\n${paths.map(p=>`${p.title}: ${p.steps.filter((_,i)=>completed.includes(`${p.id}-${i}`)).length}/3 stages`).join('\n')}\n`}
-function bind(){if($('#search')){const requested=location.hash.split('/')[1];if(['Book','Video','Course','Paper','Report'].includes(requested))$('#kind').value=requested;['search','kind','topic','level','only-saved'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',filter));filter()}
-if($('#study-notes'))$('#study-notes').oninput=e=>{storage.write('sp-notes',e.target.value);$('#notes-status').textContent='Notes saved on this browser.'};
-for(const id of ['institution','audience','cohort','plan-notes'])if($('#'+id))$('#'+id).oninput=e=>{const k=id==='plan-notes'?'notes':id;plan[k]=id==='cohort'?Math.min(1000,Math.max(1,Number(e.target.value)||1)):e.target.value;storage.write('sp-plan',plan)};
-if($('#model'))$('#model').onchange=e=>{plan.model=e.target.value;storage.write('sp-plan',plan);render(false)};
-if($('#export-plan'))$('#export-plan').onclick=()=>download('SiliconPath_Training_Center_Brief.md',brief());if($('#print-plan'))$('#print-plan').onclick=()=>window.print();
-if($('#export-desk'))$('#export-desk').onclick=()=>download('SiliconPath_Study_Notebook.md',deskText());
-if($('#export-backup'))$('#export-backup').onclick=()=>download('SiliconPath_Workspace.json',JSON.stringify({version:1,saved,completed,plan,notes:storage.read('sp-notes','')},null,2),'application/json');
-if($('#import-backup'))$('#import-backup').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>1000000)throw Error();const v=JSON.parse(await file.text());if(v.version!==1||!Array.isArray(v.saved)||!Array.isArray(v.completed)||typeof v.notes!=='string'||!v.plan||typeof v.plan!=='object'||!Array.isArray(v.plan.tasks))throw Error();if(!confirm('Replace this browser’s study workspace with the selected backup?'))return;saved=v.saved.filter(id=>resources.some(r=>r.id===id));completed=v.completed.filter(id=>paths.some(p=>p.steps.some((_,i)=>`${p.id}-${i}`===id)));const p=v.plan;plan={institution:String(p.institution||''),audience:String(p.audience||''),model:models[p.model]?p.model:'digital',cohort:Math.min(1000,Math.max(1,Number(p.cohort)||12)),tasks:p.tasks.filter(id=>tasks.some(t=>t[0]===id)),notes:String(p.notes||''),budget:cleanBudget(p.budget)};storage.write('sp-saved',saved);storage.write('sp-completed',completed);storage.write('sp-plan',plan);storage.write('sp-notes',v.notes);render(false);toast('Workspace restored')}catch{toast('Invalid backup. Choose an exported SiliconPath JSON file.')}};
+<div class="callout">Independent educational project · Prepared for faculty discussion,<br>No institutional affiliation, endorsement, accreditation or certification is implied.</div></div>`;
 }
-function render(scroll=true){if(window.LabStudio)window.LabStudio.stop();const route=(location.hash.slice(1)||'home').split('/');const pages={home,learn,library,planner,workspace,about,support,initiative:()=>window.SiliconInitiative.page(route[1]),packaging:()=>window.PackagingPilot.page(route[1]),operations:()=>window.LabOperations.page(route[1]),start:()=>window.SiliconGuides.start(),equipment:()=>window.SiliconGuides.equipmentPage(),faculty:()=>window.SiliconGuides.faculty(),labs:()=>window.LabStudio.page(route[1]),circuit:()=>window.CircuitLab.page(),projects:()=>window.EngineeringHub.projectsPage(route[1]),code:()=>window.EngineeringHub.codePage(route[1])};$('#main').innerHTML=route[0]==='path'?pathView(route[1]):(pages[route[0]]||notFound)();document.title=`${route[0]==='home'?'From knowledge to capability':route[0]==='path'?(paths.find(p=>p.id===route[1])?.title||'Learning path'):({initiative:'Course concept & future labs',packaging:'Packaging & PCB learning pilot',support:'Project support',operations:'Lab operational study',start:'Start here',equipment:'Equipment & costs',faculty:'Faculty toolkit',labs:'3D lab studio',circuit:'Digital circuit lab',projects:'Engineering projects',code:'Engineering code library',learn:'Learning paths',library:'Study library',planner:'Training-center planner',workspace:'My study desk',about:'Editorial policy'}[route[0]]||'Page not found')} | SiliconPath`;document.querySelectorAll('nav a').forEach(a=>{a.removeAttribute('aria-current');if(a.hash==='#'+route[0]||(route[0]==='path'&&a.hash==='#learn'))a.setAttribute('aria-current','page')});bind();bindCosts();bindSupport();if(window.SiliconInitiative)window.SiliconInitiative.bind();if(window.PackagingPilot)window.PackagingPilot.bind();if(window.SiliconGuides)window.SiliconGuides.bind();if(window.LabOperations)window.LabOperations.bind();document.querySelectorAll('.nav-menu').forEach(n=>n.open=false);if(route[0]==='circuit'&&window.CircuitLab)window.CircuitLab.bind();if((route[0]==='projects'||route[0]==='code')&&window.EngineeringHub)window.EngineeringHub.bind();if(route[0]==='labs'&&window.LabStudio){if(window.LabStudio.scales[route[1]])window.LabStudio.chooseScale(route[1]);window.LabStudio.bind();if(route[2]!==undefined)window.LabStudio.select(Number(route[2])||0)}if(scroll)window.scrollTo(0,0)}
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.detail)showDetail(b.dataset.detail);if(b.dataset.save)toggleSave(b.dataset.save);if(b.dataset.quiz){const p=paths.find(p=>p.id===b.dataset.quiz),a=$('#quiz-answer').value;$('#quiz-feedback').textContent=a===''?'Choose an answer first.':Number(a)===p.quiz[2]?'Correct. Record how this principle applies to your project.':'Review the study stages and try again.'}if(b.dataset.exportPath){const p=paths.find(p=>p.id===b.dataset.exportPath);download(`SiliconPath_${p.id}_Guide.md`,`# ${p.title}\n\nPrerequisites: ${p.prereq}\nOutcome: ${p.outcome}\n\n`+p.steps.map(s=>`## ${s[0]}\n${s[1]}\n\nActivity: ${s[3]}\n\nSources:\n`+s[2].map(id=>{const r=resources.find(r=>r.id===id);return `- ${r.title}: ${r.url}`}).join('\n')).join('\n\n'))}});
-document.addEventListener('change',e=>{if(e.target.dataset.complete){const id=e.target.dataset.complete;completed=e.target.checked?[...new Set([...completed,id])]:completed.filter(x=>x!==id);storage.write('sp-completed',completed);render(false)}if(e.target.dataset.task){const id=e.target.dataset.task;plan.tasks=e.target.checked?[...new Set([...plan.tasks,id])]:plan.tasks.filter(x=>x!==id);storage.write('sp-plan',plan);render(false)}});
-window.addEventListener('hashchange',()=>{if($('#resource-dialog').open)$('#resource-dialog').close();render();$('#main').focus({preventScroll:true})});
-fetch('resources.json').then(r=>{if(!r.ok)throw Error('Unable to load resource catalog');return r.json()}).then(data=>{resources=data;render()}).catch(()=>{$('#main').innerHTML='<div class="wrap"><h1>The library could not load.</h1><p>Please reload the page. For local use, serve the built site with npm run dev.</p><button class="btn" onclick="location.reload()">Reload</button></div>'});
+function supportBrief(v) {
+  const modes = {
+    hybrid: "Hybrid: voluntary + separately agreed specialist support",
+    consulting: "Project consulting discussion",
+    voluntary: "Voluntary contribution proposal",
+  };
+  const value = (k) => String(v[k] || "Not specified");
+  return `# SiliconPath — Semiconductor Readiness Project Brief\n\nProject lead: Arun Kumar Gharami\nRole: Volunteer Project Coordinator — Semiconductor Readiness & Digital Systems\nhttps://www.arungharami.info/\nContact: arun_gharami@live.com\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nStatus: discussion draft; not a submitted request or confirmed engagement.\n\nProject: ${value("project")}\nOrganization: ${value("organization")}\nLocation: ${value("location")}\nContact: ${value("contact")}\nContact email: ${value("email")}\nProject type: ${value("type")}\nCurrent stage: ${value("stage")}\nSupport model: ${modes[v.mode] || modes.voluntary}\nLab scale: ${value("scale")}\nUsers / learners: ${value("learners")}\nProject owner / reviewer: ${value("reviewer")}\n\n## Goal and requested deliverables\n${value("goal")}\n\n## Resources, budget and timing constraints\n${value("constraints")}\n\n## Proposed voluntary contribution\n${value("task")}\n\n## Questions for an invited reviewer\n${value("questions")}\n\n## Proposed pilot milestones (dates to agree)\n1. Define scope, responsibilities and success criteria.\n2. Document resources, workflow and specialist requirements.\n3. Compare alternatives and demonstrate one digital tool.\n4. Review, revise and hand over the pilot package.\n\n## Agreement checklist\n- Confirm participants and their acceptance; no faculty availability is confirmed.\n- Agree scope, volunteer capacity, deliverables, acceptance criteria, dates and dependencies.\n- Assign a project owner and qualified reviewers for relevant technical decisions.\n- Agree external costs, any separate consulting fees, contributor credit and reuse permissions.\n- Record sources, decisions, limitations and handover requirements.\n- Voluntary participation is optional; no job, academic credit or certificate is promised.\n\nEquipment settings, production recipes, engineering design, installation, commissioning and safety approval remain with qualified engineers, equipment vendors and the responsible facility team.\nThis draft does not authorize lab operation or commit any professor or institution to provide services.\n`;
+}
+function bindSupport() {
+  const form = $("#support-form");
+  if (!form) return;
+  const jump = $("#support-inquiry");
+  if (jump)
+    jump.onclick = () => {
+      $("#support-request").scrollIntoView({ behavior: "smooth" });
+      form.elements.project.focus({ preventScroll: true });
+    };
+  const values = () => Object.fromEntries(new FormData(form));
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    download("SiliconPath_Project_Discussion_Brief.md", supportBrief(values()));
+    $("#support-status").textContent =
+      "Brief downloaded. No request has been sent; share it after reviewing the details.";
+  };
+  const email = $("#support-email");
+  if (email)
+    email.onclick = () => {
+      if (!form.reportValidity()) return;
+      const v = values();
+      const body = `SiliconPath volunteer project inquiry\n\nProject: ${v.project}\nOrganization: ${v.organization}\nLocation: ${v.location}\nContact: ${v.contact} (${v.email})\nType / stage: ${v.type} / ${v.stage}\n\nRequested deliverables: ${v.goal}\n\nPlease see my downloaded project brief for constraints, tasks and review questions.`;
+      const a = document.createElement("a");
+      a.href =
+        "mailto:arun_gharami@live.com?subject=" +
+        encodeURIComponent("SiliconPath volunteer inquiry: " + v.project) +
+        "&body=" +
+        encodeURIComponent(body);
+      a.click();
+      $("#support-status").textContent =
+        "Email draft requested in your email app. Attach the downloaded brief, review it and send it there.";
+    };
+}
+function notFound() {
+  return `<div class="wrap">${head("Page not found", "Choose a learning path.", "This address does not match a SiliconPath page.")}<a class="btn" href="#home">Return home</a></div>`;
+}
+function showDetail(id) {
+  const r = resources.find((x) => x.id === id);
+  if (!r) return;
+  const d = $("#resource-dialog");
+  d.innerHTML = `<button class="dialog-close" id="close-dialog" aria-label="Close resource details">×</button><span class="tag">${esc(r.kind)} / ${esc(r.topic)}</span><h2 id="dialog-title" style="margin-top:20px">${esc(r.title)}</h2><p class="subtle">${esc(r.provider)}</p><p>${esc(r.summary)}</p><div class="callout"><b>How to use it</b><br>${esc(r.use)}</div><div class="dialog-meta"><div><b>Level</b>${esc(r.level)}</div><div><b>Access</b>${esc(r.access)}</div><div><b>Publication year</b>${esc(r.year || "Check original source")}</div><div><b>Listing checked</b>${esc(r.checked)}</div><div style="grid-column:1/-1"><b>Review status</b>${esc(r.review)}</div>${r.doi ? `<div><b>DOI</b>${esc(r.doi)}</div>` : ""}</div><p class="subtle">Follow the original source for full details, current availability and usage rights.</p><div class="actions"><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Open original source ↗</a><button class="btn secondary" data-save="${r.id}" aria-pressed="${saved.includes(r.id)}">${saved.includes(r.id) ? "✓ Saved" : "+ Save to reading list"}</button></div>`;
+  if (!d.open) d.showModal();
+  $("#close-dialog").onclick = () => d.close();
+}
+function toggleSave(id) {
+  saved = saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id];
+  storage.write("sp-saved", saved);
+  document.querySelectorAll(`[data-save="${id}"]`).forEach((b) => {
+    b.textContent = saved.includes(id) ? "✓ Saved" : "+ Save";
+    b.setAttribute("aria-pressed", String(saved.includes(id)));
+  });
+  if (location.hash === "#workspace") render(false);
+  if ($("#only-saved")?.checked) filter();
+  toast(
+    saved.includes(id)
+      ? "Added to your study desk"
+      : "Removed from reading list",
+  );
+}
+function budgetSummary() {
+  const b = plan.budget || {};
+  const val = (k) => Math.max(0, Number(b[k]) || 0);
+  const keys = [
+    "purchase",
+    "installation",
+    "software",
+    "service",
+    "consumables",
+    "staff",
+  ];
+  const count = keys.filter((k) => b[k] !== "" && b[k] !== undefined).length;
+  const one = val("purchase") + val("installation");
+  const annual =
+    val("software") + val("service") + val("consumables") + val("staff");
+  return { one, annual, first: one + annual, count };
+}
+function budgetText() {
+  const b = plan.budget || {},
+    t = budgetSummary();
+  if (!t.count && !b.notes) return "";
+  return (
+    "\n## Quote-based budget worksheet (USD)\n" +
+    ["purchase", "installation", "software", "service", "consumables", "staff"]
+      .map(
+        (k) =>
+          k +
+          ": " +
+          (b[k] !== undefined && b[k] !== "" ? b[k] : "Not specified"),
+      )
+      .join("\n") +
+    "\nEntered one-time subtotal: " +
+    t.one.toFixed(2) +
+    "\nEntered annual subtotal: " +
+    t.annual.toFixed(2) +
+    "\nEntered first-year subtotal: " +
+    t.first.toFixed(2) +
+    "\nSources / assumptions: " +
+    (b.notes || "Not specified") +
+    "\nSubtotals include only entered categories; not a complete budget.\n"
+  );
+}
+function brief() {
+  const m = models[plan.model] || models.digital;
+  return `# SiliconPath — Training-center pilot brief\n\nCreated and curated by Arun Kumar Gharami ↗\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nContact: arun_gharami@live.com\n\nPlanning draft; institutional review required.\n\nInstitution: ${plan.institution || "Not specified"}\nLearners: ${plan.audience}\nProposed cohort: ${plan.cohort}\nModel: ${m.name}\n\n## Purpose\n${m.description}\n\n## Equipment categories (proposed)\n${m.equipment.map((x) => "- " + x).join("\n")}\n\n## Facility dependencies\n${m.facilities.map((x) => "- " + x).join("\n")}\n\n## Example activity\n${m.activity}\n\n## Budget categories — quotes needed\n${m.costs.map((x) => "- " + x).join("\n")}\n\n## Planning checklist\n${tasks.map((t) => `- [${plan.tasks.includes(t[0]) ? "x" : " "}] ${t[1]}: ${t[2]}`).join("\n")}\n\n## Notes and open questions\n${plan.notes || "No notes entered."}\n${budgetText()}\nChecklist progress is self-reported, not a readiness assessment. Equipment availability, capacity, curriculum, safety and costs must be verified locally.\n`;
+}
+function deskText() {
+  return `# SiliconPath — Study notebook\n\nCreated and curated by Arun Kumar Gharami ↗\n\nIndependent educational project · Prepared for faculty discussion,\nNo institutional affiliation, endorsement, accreditation or certification is implied.\nContact: arun_gharami@live.com\n\n## Saved resources\n${resources
+    .filter((r) => saved.includes(r.id))
+    .map((r) => `- ${r.title} — ${r.provider}\n  ${r.url}\n  ${r.review}`)
+    .join(
+      "\n",
+    )}\n\n## Notes\n${storage.read("sp-notes", "")}\n\n## Self-reported progress\n${paths.map((p) => `${p.title}: ${p.steps.filter((_, i) => completed.includes(`${p.id}-${i}`)).length}/3 stages`).join("\n")}\n${
+    practiceTracks().length
+      ? `\n## Practice evidence (auto-checked)\n${practiceTracks()
+          .map(
+            ([, t, label]) =>
+              `${label}: ${t.summary().done}/${t.summary().total} exercises passed.`,
+          )
+          .join(
+            "\n",
+          )} Export the full evidence portfolios from the Practice pages.\n`
+      : ""
+  }`;
+}
+function bind() {
+  if ($("#search")) {
+    const requested = location.hash.split("/")[1];
+    if (["Book", "Video", "Course", "Paper", "Report"].includes(requested))
+      $("#kind").value = requested;
+    ["search", "kind", "topic", "level", "only-saved"].forEach((id) =>
+      $("#" + id).addEventListener(
+        id === "search" ? "input" : "change",
+        filter,
+      ),
+    );
+    filter();
+  }
+  if ($("#study-notes"))
+    $("#study-notes").oninput = (e) => {
+      storage.write("sp-notes", e.target.value);
+      $("#notes-status").textContent = "Notes saved on this browser.";
+    };
+  for (const id of ["institution", "audience", "cohort", "plan-notes"])
+    if ($("#" + id))
+      $("#" + id).oninput = (e) => {
+        const k = id === "plan-notes" ? "notes" : id;
+        plan[k] =
+          id === "cohort"
+            ? Math.min(1000, Math.max(1, Number(e.target.value) || 1))
+            : e.target.value;
+        storage.write("sp-plan", plan);
+      };
+  if ($("#model"))
+    $("#model").onchange = (e) => {
+      plan.model = e.target.value;
+      storage.write("sp-plan", plan);
+      render(false);
+    };
+  if ($("#export-plan"))
+    $("#export-plan").onclick = () =>
+      download("SiliconPath_Training_Center_Brief.md", brief());
+  if ($("#print-plan")) $("#print-plan").onclick = () => window.print();
+  if ($("#export-desk"))
+    $("#export-desk").onclick = () =>
+      download("SiliconPath_Study_Notebook.md", deskText());
+  if ($("#export-backup"))
+    $("#export-backup").onclick = () =>
+      download(
+        "SiliconPath_Workspace.json",
+        JSON.stringify(
+          {
+            version: 1,
+            saved,
+            completed,
+            plan,
+            notes: storage.read("sp-notes", ""),
+            ...Object.fromEntries(
+              practiceTracks().map(([key, t]) => [key, t.exportState()]),
+            ),
+          },
+          null,
+          2,
+        ),
+        "application/json",
+      );
+  if ($("#import-backup"))
+    $("#import-backup").onchange = async (e) => {
+      try {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 1000000) throw Error();
+        const v = JSON.parse(await file.text());
+        if (
+          v.version !== 1 ||
+          !Array.isArray(v.saved) ||
+          !Array.isArray(v.completed) ||
+          typeof v.notes !== "string" ||
+          !v.plan ||
+          typeof v.plan !== "object" ||
+          !Array.isArray(v.plan.tasks)
+        )
+          throw Error();
+        if (
+          !confirm(
+            "Replace this browser’s study workspace with the selected backup?",
+          )
+        )
+          return;
+        saved = v.saved.filter((id) => resources.some((r) => r.id === id));
+        completed = v.completed.filter((id) =>
+          paths.some((p) => p.steps.some((_, i) => `${p.id}-${i}` === id)),
+        );
+        const p = v.plan;
+        plan = {
+          institution: String(p.institution || ""),
+          audience: String(p.audience || ""),
+          model: models[p.model] ? p.model : "digital",
+          cohort: Math.min(1000, Math.max(1, Number(p.cohort) || 12)),
+          tasks: p.tasks.filter((id) => tasks.some((t) => t[0] === id)),
+          notes: String(p.notes || ""),
+          budget: cleanBudget(p.budget),
+        };
+        storage.write("sp-saved", saved);
+        storage.write("sp-completed", completed);
+        storage.write("sp-plan", plan);
+        storage.write("sp-notes", v.notes);
+        for (const [key, t] of practiceTracks())
+          if (v[key]) t.importState(v[key]);
+        render(false);
+        toast("Workspace restored");
+      } catch {
+        toast("Invalid backup. Choose an exported SiliconPath JSON file.");
+      }
+    };
+}
+function render(scroll = true) {
+  if (window.LabStudio) window.LabStudio.stop();
+  const route = (location.hash.slice(1) || "home").split("/");
+  const pages = {
+    home,
+    learn,
+    library,
+    planner,
+    workspace,
+    about,
+    support,
+    initiative: () => window.SiliconInitiative.page(route[1]),
+    packaging: () => window.PackagingPilot.page(route[1]),
+    operations: () => window.LabOperations.page(route[1]),
+    start: () => window.SiliconGuides.start(),
+    equipment: () => window.SiliconGuides.equipmentPage(),
+    faculty: () => window.SiliconGuides.faculty(),
+    labs: () => window.LabStudio.page(route[1]),
+    circuit: () => window.CircuitLab.page(),
+    projects: () => window.EngineeringHub.projectsPage(route[1]),
+    code: () => window.EngineeringHub.codePage(route[1]),
+    practice: () => window.PracticeTrack.page(route[1]),
+    rtl: () => window.RtlTrack.page(route[1]),
+  };
+  $("#main").innerHTML =
+    route[0] === "path" ? pathView(route[1]) : (pages[route[0]] || notFound)();
+  document.title = `${route[0] === "home" ? "From knowledge to capability" : route[0] === "path" ? paths.find((p) => p.id === route[1])?.title || "Learning path" : { initiative: "Course concept & future labs", packaging: "Packaging & PCB learning pilot", support: "Project support", operations: "Lab operational study", start: "Start here", equipment: "Equipment & costs", faculty: "Faculty toolkit", labs: "3D lab studio", circuit: "Digital circuit lab", practice: "Logic → CMOS practice", rtl: "RTL → Synthesis practice", projects: "Engineering projects", code: "Engineering code library", learn: "Learning paths", library: "Study library", planner: "Training-center planner", workspace: "My study desk", about: "Editorial policy" }[route[0]] || "Page not found"} | SiliconPath`;
+  document.querySelectorAll("header nav a").forEach((a) => {
+    a.removeAttribute("aria-current");
+    if (
+      a.hash === "#" + route[0] ||
+      (route[0] === "path" && a.hash === "#learn") ||
+      (route[0] === "rtl" && a.hash === "#practice")
+    )
+      a.setAttribute("aria-current", "page");
+  });
+  bind();
+  bindCosts();
+  bindSupport();
+  if (window.SiliconInitiative) window.SiliconInitiative.bind();
+  if (window.PackagingPilot) window.PackagingPilot.bind();
+  if (window.SiliconGuides) window.SiliconGuides.bind();
+  if (window.LabOperations) window.LabOperations.bind();
+  document.querySelectorAll(".nav-menu").forEach((n) => (n.open = false));
+  if (route[0] === "circuit" && window.CircuitLab) window.CircuitLab.bind();
+  if (route[0] === "practice" && window.PracticeTrack)
+    window.PracticeTrack.bind();
+  if (route[0] === "rtl" && window.RtlTrack) window.RtlTrack.bind();
+  if ((route[0] === "projects" || route[0] === "code") && window.EngineeringHub)
+    window.EngineeringHub.bind();
+  if (route[0] === "labs" && window.LabStudio) {
+    if (window.LabStudio.scales[route[1]])
+      window.LabStudio.chooseScale(route[1]);
+    window.LabStudio.bind();
+    if (route[2] !== undefined) window.LabStudio.select(Number(route[2]) || 0);
+  }
+  if (scroll) window.scrollTo(0, 0);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.detail) showDetail(b.dataset.detail);
+  if (b.dataset.save) toggleSave(b.dataset.save);
+  if (b.dataset.quiz) {
+    const p = paths.find((p) => p.id === b.dataset.quiz),
+      a = $("#quiz-answer").value;
+    $("#quiz-feedback").textContent =
+      a === ""
+        ? "Choose an answer first."
+        : Number(a) === p.quiz[2]
+          ? "Correct. Record how this principle applies to your project."
+          : "Review the study stages and try again.";
+  }
+  if (b.dataset.exportPath) {
+    const p = paths.find((p) => p.id === b.dataset.exportPath);
+    download(
+      `SiliconPath_${p.id}_Guide.md`,
+      `# ${p.title}\n\nPrerequisites: ${p.prereq}\nOutcome: ${p.outcome}\n\n` +
+        p.steps
+          .map(
+            (s) =>
+              `## ${s[0]}\n${s[1]}\n\nActivity: ${s[3]}\n\nSources:\n` +
+              s[2]
+                .map((id) => {
+                  const r = resources.find((r) => r.id === id);
+                  return `- ${r.title}: ${r.url}`;
+                })
+                .join("\n"),
+          )
+          .join("\n\n"),
+    );
+  }
+});
+document.addEventListener("change", (e) => {
+  if (e.target.dataset.complete) {
+    const id = e.target.dataset.complete;
+    completed = e.target.checked
+      ? [...new Set([...completed, id])]
+      : completed.filter((x) => x !== id);
+    storage.write("sp-completed", completed);
+    render(false);
+  }
+  if (e.target.dataset.task) {
+    const id = e.target.dataset.task;
+    plan.tasks = e.target.checked
+      ? [...new Set([...plan.tasks, id])]
+      : plan.tasks.filter((x) => x !== id);
+    storage.write("sp-plan", plan);
+    render(false);
+  }
+});
+window.addEventListener("hashchange", () => {
+  if ($("#resource-dialog").open) $("#resource-dialog").close();
+  render();
+  $("#main").focus({ preventScroll: true });
+});
+fetch("resources.json")
+  .then((r) => {
+    if (!r.ok) throw Error("Unable to load resource catalog");
+    return r.json();
+  })
+  .then((data) => {
+    resources = data;
+    render();
+  })
+  .catch(() => {
+    $("#main").innerHTML =
+      '<div class="wrap"><h1>The library could not load.</h1><p>Please reload the page. For local use, serve the built site with npm run dev.</p><button class="btn" id="reload-page">Reload</button></div>';
+    $("#reload-page").addEventListener("click", () => location.reload());
+  });
 
-window.addEventListener("siliconpath-model",e=>{plan.model=e.detail;storage.write("sp-plan",plan)});
-window.addEventListener("siliconpath-export",e=>download(e.detail.name,e.detail.text));
+window.addEventListener("siliconpath-model", (e) => {
+  plan.model = e.detail;
+  storage.write("sp-plan", plan);
+});
+window.addEventListener("siliconpath-export", (e) =>
+  download(e.detail.name, e.detail.data ?? e.detail.text, e.detail.type),
+);
 
-function cleanBudget(raw){const b=raw&&typeof raw==='object'?raw:{};const out={notes:typeof b.notes==='string'?b.notes:''};for(const k of ['purchase','installation','software','service','consumables','staff'])out[k]=b[k]!==''&&b[k]!==undefined&&b[k]!==null&&Number.isFinite(Number(b[k]))?Math.min(1e12,Math.max(0,Number(b[k]))):'';return out}
-function bindCosts(){if(!$('#cost-summary'))return;plan.budget=cleanBudget(plan.budget);const b=plan.budget;const update=()=>{const t=budgetSummary(),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);$('#cost-summary').innerHTML=`<div><small>ONE-TIME INPUTS</small><b>${money(t.one)}</b></div><div><small>ANNUAL INPUTS</small><b>${money(t.annual)}</b></div><div><small>FIRST-YEAR SUBTOTAL</small><b>${money(t.first)}</b></div><p>${t.count}/6 categories entered · excludes all unspecified items.</p>`};document.querySelectorAll('[data-cost]').forEach(n=>{n.value=b[n.dataset.cost]??'';n.oninput=()=>{const value=n.value;b[n.dataset.cost]=value===''?'':Math.min(1e12,Math.max(0,Number(value)||0));storage.write('sp-plan',plan);update()}});$('#quote-notes').value=b.notes;$('#quote-notes').oninput=e=>{b.notes=e.target.value;storage.write('sp-plan',plan)};update()}
+function cleanBudget(raw) {
+  const b = raw && typeof raw === "object" ? raw : {};
+  const out = { notes: typeof b.notes === "string" ? b.notes : "" };
+  for (const k of [
+    "purchase",
+    "installation",
+    "software",
+    "service",
+    "consumables",
+    "staff",
+  ])
+    out[k] =
+      b[k] !== "" &&
+      b[k] !== undefined &&
+      b[k] !== null &&
+      Number.isFinite(Number(b[k]))
+        ? Math.min(1e12, Math.max(0, Number(b[k])))
+        : "";
+  return out;
+}
+function bindCosts() {
+  if (!$("#cost-summary")) return;
+  plan.budget = cleanBudget(plan.budget);
+  const b = plan.budget;
+  const update = () => {
+    const t = budgetSummary(),
+      money = (n) =>
+        new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(n);
+    $("#cost-summary").innerHTML =
+      `<div><small>ONE-TIME INPUTS</small><b>${money(t.one)}</b></div><div><small>ANNUAL INPUTS</small><b>${money(t.annual)}</b></div><div><small>FIRST-YEAR SUBTOTAL</small><b>${money(t.first)}</b></div><p>${t.count}/6 categories entered · excludes all unspecified items.</p>`;
+  };
+  document.querySelectorAll("[data-cost]").forEach((n) => {
+    n.value = b[n.dataset.cost] ?? "";
+    n.oninput = () => {
+      const value = n.value;
+      b[n.dataset.cost] =
+        value === "" ? "" : Math.min(1e12, Math.max(0, Number(value) || 0));
+      storage.write("sp-plan", plan);
+      update();
+    };
+  });
+  $("#quote-notes").value = b.notes;
+  $("#quote-notes").oninput = (e) => {
+    b.notes = e.target.value;
+    storage.write("sp-plan", plan);
+  };
+  update();
+}
 
-window.SiliconResourceTitle=id=>resources.find(r=>r.id===id)?.title||id;
+window.SiliconResource = (id) => resources.find((r) => r.id === id) || null;
+window.SiliconResourceTitle = (id) =>
+  resources.find((r) => r.id === id)?.title || id;
 
-window.addEventListener("siliconpath-ops-plan",e=>{plan.model=e.detail.model;plan.budget=cleanBudget(e.detail.budget);storage.write("sp-plan",plan)});
-
-
-
+window.addEventListener("siliconpath-ops-plan", (e) => {
+  plan.model = e.detail.model;
+  plan.budget = cleanBudget(e.detail.budget);
+  storage.write("sp-plan", plan);
+});
