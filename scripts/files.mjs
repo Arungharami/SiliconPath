@@ -9,6 +9,10 @@ export const scripts = [
   "initiative.js",
   "circuit.js",
   "engineering.js",
+  "practice.js",
+  "rtl-engine.js",
+  "rtl-synth.js",
+  "rtl.js",
   "app.js",
 ];
 

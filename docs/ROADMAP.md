@@ -17,8 +17,12 @@ Updated: October 15, 2026. Status describes implemented work separately from pro
 - Inquiry brief and email-draft workflow.
 - Public charter, contribution guide and contributor templates.
 
+## November 5 — Logic → CMOS practice track
+- Five modules, nine auto-checked exercises, switch-level CMOS checker and exportable evidence. See [practice-track.md](practice-track.md).
+- Navigation groups institutional planning pages under "Educators & labs"; no pages removed.
+
 ## Current verification
-November 5, 2026: catalog and syntax checks, 53 Node VM content/logic checks, the static build, and a Chromium browser suite (every route at 1280px and 375px; console/CSP errors, overflow, axe WCAG 2.1 AA serious/critical rules) pass locally and run in CI. Manual screen-reader and cross-browser review remain outstanding.
+November 5, 2026: catalog and syntax checks, 65 Node VM content/logic checks, the static build, and a Chromium browser suite (every route at 1280px and 375px; console/CSP errors, overflow, axe WCAG 2.1 AA serious/critical rules) pass locally and run in CI. Manual screen-reader and cross-browser review remain outstanding.
 
 ## Next — validation and first pilot
 1. Agree a reviewer for one pathway and activity rubric.
@@ -36,6 +40,13 @@ After creation, publish profiles, verify owner access and only then link the con
 
 ## Future — shared learning workflows
 Define privacy, ownership, access and actual learner requirements before building accounts, cohort submissions, shared journals or instructor assessments.
+
+## November 5 — RTL → Simulation → Synthesis practice track
+- Six modules, 13 auto-checked exercises, an in-browser Verilog subset engine cross-checked against Icarus Verilog, real Yosys output, and a downloadable project bundle. See [rtl-track.md](rtl-track.md).
+
+## Next — design workflow track follow-ups
+- Decide whether to run Yosys in the browser (YoWASP, about 69 MB of WebAssembly) after a load-time and memory spike; it would also need `'wasm-unsafe-eval'` in the CSP.
+- Test the downloaded project bundle on Windows (run.sh needs a POSIX shell; WSL or Git Bash).
 
 ## Future — research tools
 Consider source-grounded search, clearly labeled simulations and reviewed research modules. AI-generated answers must distinguish reviewed evidence from unreviewed records.

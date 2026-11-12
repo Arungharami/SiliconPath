@@ -21,7 +21,9 @@ Connect credible semiconductor learning with practical planning, digital tools a
 A pathway from curiosity to capability: more learners and institutions developing semiconductor knowledge, supervised practical skills and well-documented projects.
 
 ## What you can use today
-- Six guided learning paths and a curated catalog of 32 starting resources.
+- **Logic → CMOS practice track:** five modules and nine auto-checked exercises, from truth tables to transistor-level CMOS gate design, with an exportable evidence portfolio. See [design notes](docs/practice-track.md).
+- **RTL → Simulation → Synthesis practice track:** six modules and 13 auto-checked exercises. Learners write Verilog in the browser (checked by SiliconPath's subset engine, cross-checked against Icarus Verilog), write test vectors that must catch bugged designs, read waveforms and real Yosys netlists, and download a 4-bit counter project that runs with Icarus Verilog and Yosys. See [design notes](docs/rtl-track.md).
+- Six guided learning paths and a curated catalog of 35 starting resources.
 - Interactive micro, medium and large conceptual lab models.
 - Equipment guidance, curriculum mapping and user-entered budget scenarios.
 - Operational planning studies, blank documentation templates and downloadable briefs.
@@ -43,7 +45,7 @@ Volunteer availability, deliverables, external costs, permissions and reviewers 
 ## Project status and evidence
 This is a working independent educational platform and a proposed volunteer service initiative. Public commits and source code show what has been implemented; they do not establish accreditation, institutional endorsement or production readiness.
 
-- Automated checks: catalog and syntax validation, 53 Node VM content/logic checks, and a Chromium browser suite covering every route at desktop and 375px width (console/CSP errors, horizontal overflow, axe WCAG 2.1 AA serious/critical rules). All run in CI. Manual screen-reader review has not been performed.
+- Automated checks: catalog and syntax validation, 74 Node VM content/logic checks, an RTL cross-check against Icarus Verilog and Yosys (80 designs and testbenches), and a Chromium browser suite covering every route plus learner journeys for both practice tracks at desktop and 375px width (console/CSP errors, horizontal overflow, axe WCAG 2.1 AA serious/critical rules). All run in CI. Manual screen-reader review has not been performed.
 - Source descriptions summarize listings; full-content and faculty review are pending.
 - Detailed Vivo-related warehouse and volunteer project case studies require exact roles, dates, permitted names and supporting evidence.
 - The maintainer supplied the GitHub organization name SiliconPath-six. Connector access and organization profile publication remain unverified; see the prepared profile and access guide. A dedicated Hugging Face organization is not verified.
@@ -60,6 +62,7 @@ npm test                               # Node VM content/logic checks
 npm run build                          # produce dist/
 npx playwright install chromium        # once, for browser tests
 npm run test:e2e                       # Chromium route, accessibility and overflow checks
+npm run test:rtl                       # RTL engine vs Icarus Verilog + Yosys (tools must be installed)
 ```
 
 See [architecture](docs/ARCHITECTURE.md), [changelog](CHANGELOG.md), [security policy](SECURITY.md) and [code of conduct](CODE_OF_CONDUCT.md).

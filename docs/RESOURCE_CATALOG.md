@@ -417,3 +417,94 @@ Suggested use: Identify relevant guidance for locally reviewed laboratory activi
 A catalog of training topics and provider-listed course descriptions.
 
 Suggested use: Compare prerequisites, stated durations and current availability with the intended curriculum.
+
+## Computation Structures — Unit 3: CMOS
+
+- Organization: MIT OpenCourseWare · C. Terman
+- Format / topic / level: Course / Design / Intermediate
+- Access: Free to read
+- Source: https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c3/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+University lecture videos on the MOSFET physical and electrical views, the CMOS recipe for building gates, CMOS timing and worked examples.
+
+Suggested use: Watch the CMOS Recipe and CMOS Gates lessons alongside the Logic → CMOS practice modules.
+
+## Computation Structures — Unit 4: Combinational Logic
+
+- Organization: MIT OpenCourseWare · C. Terman
+- Format / topic / level: Course / Foundations / Beginner
+- Access: Free to read
+- Source: https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c4/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+University lessons on sum-of-products, inverting logic, logic simplification and Karnaugh maps, with worked examples.
+
+Suggested use: Study the Sum of Products and Karnaugh Maps lessons before the simplification exercises.
+
+## Digital Design and Computer Architecture, 2nd Edition
+
+- Organization: Elsevier · D. M. Harris and S. L. Harris
+- Format / topic / level: Book / Design / Beginner
+- Access: Purchase / institutional access
+- Source: https://shop.elsevier.com/books/digital-design-and-computer-architecture/harris/978-0-12-394424-5
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+A textbook progressing from binary and logic gates (Chapter 1, From Zero to One) through combinational logic design (Chapter 2) to processors.
+
+Suggested use: Read Chapters 1 and 2 for Boolean algebra, Karnaugh maps and transistor-level gates.
+
+## Computation Structures — Unit 5: Sequential Logic
+
+- Organization: MIT OpenCourseWare · C. Terman
+- Format / topic / level: Course / Foundations / Intermediate
+- Access: Free to read
+- Source: https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c5/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+University lessons on digital state and sequential logic, with annotated slides and a worksheet.
+
+Suggested use: Study the Digital State lesson before the clocked-register exercises in the RTL track.
+
+## Icarus Verilog documentation
+
+- Organization: Icarus Verilog project
+- Format / topic / level: Guide / Design / Intermediate
+- Access: Free to read
+- Source: https://steveicarus.github.io/iverilog/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+Official documentation for Icarus Verilog, an open-source Verilog compiler and simulator (iverilog, vvp).
+
+Suggested use: Use the getting-started pages to install Icarus and run the testbenches downloaded from the RTL track.
+
+## Yosys Open SYnthesis Suite documentation
+
+- Organization: YosysHQ
+- Format / topic / level: Guide / Design / Intermediate
+- Access: Free to read
+- Source: https://yosyshq.readthedocs.io/projects/yosys/en/latest/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+Official documentation for Yosys, an open-source framework for RTL synthesis, including its command reference and synthesis flow.
+
+Suggested use: Look up the proc, synth, abc and stat commands used in the RTL track's synthesis module.
+
+## GTKWave documentation
+
+- Organization: GTKWave project
+- Format / topic / level: Guide / Design / Intermediate
+- Access: Free to read
+- Source: https://gtkwave.github.io/gtkwave/
+- Listing checked: 2026-11-05
+- Review: Source listing checked; full-content review pending
+
+Official documentation for GTKWave, an open-source waveform viewer for VCD and other simulation dump formats.
+
+Suggested use: Open the wave.vcd file produced by the RTL project bundle.

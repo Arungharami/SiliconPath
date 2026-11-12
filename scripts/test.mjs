@@ -35,6 +35,7 @@ const context = vm.createContext({
   clearTimeout,
   URL,
   Blob,
+  TextEncoder,
   location: { hash: "#home" },
   confirm: () => true,
   localStorage: {
@@ -127,7 +128,7 @@ check("Unknown path has a return route", () =>
 check("Search finds provider and title", () => {
   node("#search").value = "MIT";
   a.filter();
-  assert.ok(node("#result-count").textContent.startsWith("5 resource"));
+  assert.ok(node("#result-count").textContent.startsWith("8 resource"));
   node("#search").value = "";
 });
 check("Format filter distinguishes papers from reports", () => {
@@ -138,8 +139,8 @@ check("Format filter distinguishes papers from reports", () => {
   node("#kind").value = "";
 });
 check("Combined filters and empty state work", () => {
-  node("#kind").value = "Book";
-  node("#level").value = "Beginner";
+  node("#kind").value = "Video";
+  node("#level").value = "Advanced";
   a.filter();
   assert.ok(node("#resource-grid").innerHTML.includes("No matching"));
   node("#kind").value = "";
@@ -699,7 +700,676 @@ check("Code library distinguishes language and validation status", () => {
   assert.ok(detail.includes("Pseudocode"));
   assert.ok(detail.includes("data-copy-code"));
 });
+vm.runInContext(
+  await readFile(new URL("../practice.js", import.meta.url), "utf8"),
+  context,
+);
+const P = context.window.PracticeTrack;
+const truth = (src, vars) =>
+  Array.from(P.rows(vars), (env) => P.evaluate(P.parse(src, vars), env)).join(
+    "",
+  );
+check(
+  "Practice parser applies NOT > AND > XOR > OR precedence and implicit AND",
+  () => {
+    const V = ["A", "B", "C"];
+    assert.equal(truth("AB'+C", V), truth("(A*(!B))+C", V));
+    assert.equal(truth("A+B*C", V), truth("A+(B·C)", V));
+    assert.notEqual(truth("A+B*C", V), truth("(A+B)*C", V));
+    assert.equal(truth("A^B", ["A", "B"]), "0110");
+    assert.equal(truth("(AB)'", ["A", "B"]), "1110");
+    assert.equal(truth("a b", ["A", "B"]), "0001");
+    assert.equal(truth("A''", ["A"]), "01");
+  },
+);
+check(
+  "Practice parser rejects malformed or out-of-scope input with a message",
+  () => {
+    for (const [src, msg] of [
+      ["", "Enter"],
+      ["A+", "ends too early"],
+      ["(A+B", "Missing"],
+      ["A+E", "not part of this exercise"],
+      ["A$B", "Unexpected character"],
+      ["A)", "Unexpected symbol"],
+      ["A".repeat(201), "under 200"],
+    ])
+      assert.throws(
+        () => P.parse(src, ["A", "B", "C"]),
+        (e) => e.message.includes(msg),
+        src,
+      );
+    assert.throws(
+      () => P.parseNetwork("A'*B", ["A", "B"]),
+      /only use input names/,
+    );
+    assert.throws(
+      () => P.parseNetwork("A^B", ["A", "B"]),
+      /only use input names/,
+    );
+  },
+);
+check("Practice SOP detection and literal counting", () => {
+  const V = ["A", "B", "C"];
+  assert.ok(P.isSop(P.parse("AB+A'C+B'", V)));
+  assert.ok(P.isSop(P.parse("A", V)));
+  assert.ok(!P.isSop(P.parse("A(B+C)", V)));
+  assert.ok(!P.isSop(P.parse("(AB)'+C", V)));
+  assert.ok(!P.isSop(P.parse("A^B", V)));
+  assert.equal(P.literals(P.parse("AB+A'C+B'", V)), 5);
+});
+check(
+  "Switch-level model reports pull-up, pull-down, contention and floating",
+  () => {
+    const n = (s) => P.parseNetwork(s, ["A", "B"]);
+    assert.equal(P.switchLevel(n("A+B"), n("A*B"), { A: 1, B: 1 }).out, 0);
+    assert.equal(P.switchLevel(n("A+B"), n("A*B"), { A: 0, B: 1 }).out, 1);
+    assert.equal(P.switchLevel(n("A+B"), n("A+B"), { A: 0, B: 1 }).out, "X");
+    assert.equal(P.switchLevel(n("A*B"), n("A*B"), { A: 0, B: 1 }).out, "Z");
+  },
+);
+const reference = (ex) =>
+  ex.type === "table"
+    ? truth(ex.ref, ex.vars)
+    : ex.type === "expr"
+      ? ex.ref
+      : ex.type === "inverter"
+        ? "on,off,1|off,on,0"
+        : ex.refNet;
+check("Every practice exercise accepts its reference solution", () => {
+  assert.equal(P.modules.length, 5);
+  assert.equal(P.exercises.length, 9);
+  assert.equal(new Set(P.exercises.map((e) => e.id)).size, 9);
+  for (const ex of P.exercises) {
+    const r = P.check(ex.id, reference(ex));
+    assert.ok(r.pass, `${ex.id}: ${r.feedback}`);
+    assert.ok(r.criteria.length >= 1);
+  }
+});
+check(
+  "CMOS reference networks are mutual duals using the stated transistor budget",
+  () => {
+    for (const ex of P.exercises.filter((e) => e.type === "cmos")) {
+      const pun = P.parseNetwork(ex.refNet.pun, ex.vars),
+        pdn = P.parseNetwork(ex.refNet.pdn, ex.vars);
+      assert.equal(P.literals(pun) + P.literals(pdn), ex.maxTransistors, ex.id);
+      for (const env of P.rows(ex.vars)) {
+        const s = P.switchLevel(pun, pdn, env);
+        assert.ok(s.up !== s.down, `${ex.id} ${JSON.stringify(env)}`);
+      }
+    }
+  },
+);
+check(
+  "Practice checkers reject adversarial wrong answers with specific feedback",
+  () => {
+    const fail = (id, ans, needle) => {
+      const r = P.check(id, ans);
+      assert.ok(!r.pass, `${id} accepted ${JSON.stringify(ans)}`);
+      assert.ok(
+        r.feedback.includes(needle),
+        `${id}: "${r.feedback}" lacks "${needle}"`,
+      );
+      return r;
+    };
+    fail("table-abc", "01011101".replace(/.$/, "0"), "1 row incorrect");
+    fail("table-abc", "0101", "row");
+    fail("alarm", "AB+C", "your expression gives");
+    fail("alarm", "A+", "ends too early");
+    const nonSop = fail("majority-sop", "A(B+C)+BC", "not in sum-of-products");
+    assert.ok(nonSop.criteria.find((c) => c.label.startsWith("Matches")).ok);
+    fail("majority-sop", "AB+AC+BC+ABC", "uses 9 literals");
+    fail("minterms-sop", "A'B'C'+A'BC'+AB'C'+AB'C+ABC'", "literals");
+    fail("inverter-states", "off,on,1|off,on,0", "A = 0");
+    fail("nand2", { pun: "A*B", pdn: "A*B" }, "Floating");
+    fail("nand2", { pun: "A+B", pdn: "A+B" }, "Contention");
+    fail("nand2", { pun: "A'+B", pdn: "A*B" }, "Pull-up network");
+    fail("nor2", { pun: "A*B", pdn: "A+B+A" }, "uses 5 transistors");
+    fail("aoi21", { pun: "A*B+C", pdn: "(A+B)*C" }, "Y should be 0");
+    fail("oai22", { pun: "", pdn: "(A+B)*(C+D)" }, "Enter");
+  },
+);
+check("Literal limits equal the true minimum SOP cost (brute force)", () => {
+  for (const ex of P.exercises.filter((e) => e.maxLiterals)) {
+    const vars = ex.vars,
+      f = truth(ex.ref, vars),
+      envs = Array.from(P.rows(vars));
+    const cubes = [];
+    for (let k = 0; k < 3 ** vars.length; k++) {
+      const spec = vars.map((_, j) => Math.floor(k / 3 ** j) % 3); // 0,1 or 2 = absent
+      const covers = envs.map((env) =>
+        vars.every((v, j) => spec[j] === 2 || env[v] === spec[j]),
+      );
+      if (covers.every((c, i) => !c || f[i] === "1"))
+        cubes.push({ covers, lits: spec.filter((x) => x !== 2).length });
+    }
+    let best = Infinity;
+    const search = (start, chosen, lits) => {
+      if (lits >= best) return;
+      if (envs.every((_, i) => f[i] === "0" || chosen.some((c) => c.covers[i])))
+        return void (best = lits);
+      for (let k = start; k < cubes.length; k++)
+        search(k + 1, [...chosen, cubes[k]], lits + cubes[k].lits);
+    };
+    search(0, [], 0);
+    assert.equal(best, ex.maxLiterals, ex.id);
+  }
+});
+check(
+  "Practice evidence keeps the first pass, counts attempts and survives later mistakes",
+  () => {
+    P.reset();
+    P.submit("nand2", { pun: "A*B", pdn: "A*B" }, "2026-11-01T10:00:00.000Z");
+    const ok = P.submit(
+      "nand2",
+      { pun: "A+B", pdn: "A*B" },
+      "2026-11-01T10:05:00.000Z",
+    );
+    assert.ok(ok.pass && ok.saved);
+    P.submit("nand2", { pun: "A", pdn: "B" }, "2026-11-01T10:09:00.000Z");
+    const r = P.exportState().records.nand2;
+    assert.equal(r.attempts, 3);
+    assert.equal(r.passedAt, "2026-11-01T10:05:00.000Z");
+    assert.equal(r.passAnswer.pun, "A+B");
+    assert.equal(r.answer.pun, "A");
+    assert.deepEqual({ ...P.summary() }, { done: 1, total: 9, attempted: 1 });
+    assert.ok(JSON.parse(memory.get("sp-practice")).records.nand2.passedAt);
+  },
+);
+check(
+  "Practice import recomputes pass status and drops forged or unknown records",
+  () => {
+    P.importState({
+      records: {
+        nor2: {
+          attempts: 1,
+          answer: { pun: "A", pdn: "B" },
+          passAnswer: { pun: "A", pdn: "B" },
+          passedAt: "2026-11-01T00:00:00Z",
+        },
+        alarm: {
+          attempts: 2,
+          answer: "A(B+C)",
+          passAnswer: "A(B+C)",
+          passedAt: "2026-11-02T00:00:00Z",
+        },
+        imaginary: {
+          attempts: 4,
+          answer: "A",
+          passedAt: "2026-11-02T00:00:00Z",
+        },
+        "table-abc": { attempts: -3, answer: "x" },
+        "majority-sop": {
+          attempts: 1,
+          answer: "<img src=x onerror=alert(1)>".repeat(40),
+          passedAt: "not a date",
+        },
+      },
+    });
+    const rec = P.exportState().records;
+    assert.ok(!rec.nor2.passedAt, "forged pass must not survive");
+    assert.equal(rec.alarm.passedAt, "2026-11-02T00:00:00Z");
+    assert.ok(!("imaginary" in rec) && !("table-abc" in rec));
+    assert.ok(
+      rec["majority-sop"].answer.length <= 200 && !rec["majority-sop"].passedAt,
+    );
+    for (const junk of [null, 5, "x", [], { records: 7 }])
+      assert.deepEqual({ ...P.sanitize(junk).records }, {});
+  },
+);
+check(
+  "Practice portfolio discloses the model limit and re-checks recorded answers",
+  () => {
+    P.reset();
+    P.submit("alarm", "A(B+C)", "2026-11-03T09:00:00.000Z");
+    P.submit(
+      "aoi21",
+      { pun: "(A+B)*C", pdn: "A*B" },
+      "2026-11-03T09:10:00.000Z",
+    );
+    const md = P.portfolio((id) => context.window.SiliconResource(id));
+    assert.ok(md.includes("1 of 9 exercises passed"));
+    assert.ok(md.includes("not a circuit simulation"));
+    assert.ok(md.includes("not an assessment, grade or credential"));
+    assert.ok(md.includes("Passing answer: `A(B+C)`"));
+    assert.ok(md.includes("Latest answer: `PUN = (A+B)*C; PDN = A*B`"));
+    assert.ok(md.includes("- [ ] Output matches Y"));
+    assert.ok(
+      md.includes(
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c3/",
+      ),
+    );
+    assert.ok(md.includes("Not attempted."));
+  },
+);
+check(
+  "Practice pages render complete modules with sources, diagrams and escaped answers",
+  () => {
+    P.reset();
+    P.submit("alarm", '"><script>x</script>');
+    for (const m of P.modules) {
+      context.location.hash = "#practice/" + m.id;
+      a.render(false);
+      const h = node("#main").innerHTML;
+      assert.ok(h.includes(`<h1>${m.title.replace("&", "&amp;")}</h1>`), m.id);
+      for (const part of [
+        "Worked example",
+        "Where this is used",
+        "References",
+        "Prerequisites",
+      ])
+        assert.ok(h.includes(part), `${m.id} ${part}`);
+      assert.equal((h.match(/data-check=/g) || []).length, m.exercises.length);
+      assert.ok(!/undefined|NaN/.test(h), m.id);
+      assert.ok(!h.includes("<script>x"), m.id);
+      for (const id of m.sources)
+        assert.ok(
+          catalog.some((r) => r.id === id),
+          id,
+        );
+      if (m.id === "switches" || m.id.includes("gates"))
+        assert.ok(h.includes("Switch-level model"));
+      if (m.diagram)
+        assert.ok(h.includes("pd-title-") && h.includes("<figcaption>"), m.id);
+    }
+    context.location.hash = "#practice";
+    a.render(false);
+    assert.ok(node("#main").innerHTML.includes("Export evidence portfolio"));
+    assert.ok(context.document.title.startsWith("Logic → CMOS practice"));
+    assert.ok(a.deskText().includes("Practice evidence (auto-checked)"));
+    P.reset();
+  },
+);
+for (const f of ["rtl-engine.js", "rtl-synth.js", "rtl.js"])
+  vm.runInContext(
+    await readFile(new URL("../" + f, import.meta.url), "utf8"),
+    context,
+  );
+const RE = context.window.RtlEngine;
+const R = context.window.RtlTrack;
+const rtlError = (src, top) => {
+  try {
+    RE.compile(src, top);
+  } catch (e) {
+    if (e instanceof RE.RtlError) return e;
+    throw e;
+  }
+  return null;
+};
+const wrap = (body, ports = "input wire a, input wire b, output wire y") =>
+  `module t (${ports});\n${body}\nendmodule`;
+check(
+  "RTL engine applies Verilog width rules (values confirmed with Icarus)",
+  () => {
+    const d = RE.compile(
+      wrap(
+        "assign y = ~a; assign z = (p + q) >> 1; assign w = (p + q) >> 1;",
+        "input wire a, input wire [3:0] p, input wire [3:0] q, output wire [1:0] y, output wire [3:0] z, output wire [4:0] w",
+      ),
+      "t",
+    );
+    const s = RE.simulator(d);
+    s.apply({ a: 0n, p: 15n, q: 15n });
+    assert.equal(s.get("y"), 3n); // a is widened to 2 bits before ~
+    assert.equal(s.get("z"), 7n); // 4-bit context drops the carry
+    assert.equal(s.get("w"), 15n); // 5-bit context keeps it
+    const c = RE.compile(
+      wrap(
+        "assign {co, s} = x + y2 + ci; assign r = &x; assign rep = {2{x[1:0]}};",
+        "input wire [2:0] x, input wire [2:0] y2, input wire ci, output wire [2:0] s, output wire co, output wire r, output wire [3:0] rep",
+      ),
+      "t",
+    );
+    const cs = RE.simulator(c);
+    cs.apply({ x: 7n, y2: 1n, ci: 1n });
+    assert.deepEqual(
+      [cs.get("co"), cs.get("s"), cs.get("r"), cs.get("rep")],
+      [1n, 1n, 1n, 15n],
+    );
+  },
+);
+check(
+  "RTL engine rejects out-of-subset and unsafe designs with a line number",
+  () => {
+    const cases = [
+      [wrap("assign y = a & b;\nassign y = a | b;"), "more than one"],
+      [
+        "module t (input wire en, input wire a, output reg y);\nalways @(*) begin\n if (en) y = a;\nend\nendmodule",
+        "Latch inferred",
+      ],
+      [wrap("wire w;\nassign w = w & a;\nassign y = w;"), "Combinational loop"],
+      [wrap("assign y = c;"), '"c" is not declared'],
+      [
+        "module t (input wire a, output reg y);\nassign y = a;\nendmodule",
+        "declared reg",
+      ],
+      [wrap("always @(*) y = a;"), "must be declared reg"],
+      [
+        "module t (input wire clk, input wire d, output reg q);\nalways @(posedge clk) q = d;\nendmodule",
+        "non-blocking",
+      ],
+      [wrap("assign a = b;\nassign y = b;"), "is an input"],
+      [wrap(""), '"y" is never assigned'],
+      ["module t (a, y);\nendmodule", "ANSI"],
+      [wrap("assign y = 1'bx;"), "2-state"],
+      [wrap("assign y = #1 a;"), "Expected a value"],
+      [
+        wrap(
+          "always @(*) #1 y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "Delays",
+      ],
+      [wrap("initial y = 0;"), "testbench"],
+      [wrap("assign y = $random;"), "System tasks"],
+      [
+        wrap(
+          "always @(a or b) y = a;",
+          "input wire a, input wire b, output reg y",
+        ),
+        "@(*)",
+      ],
+      [wrap("assign y = a * b;"), "Multiplication"],
+      [wrap("assign y = a === b;"), "Use =="],
+      [
+        "module m (input wire a, output wire y);\nassign y = a;\nendmodule\nmodule t (input wire a, output wire y);\nm u (a, y);\nendmodule",
+        "by name",
+      ],
+      [wrap("logic q;"), "SystemVerilog"],
+      [wrap("wire [3:1] q;"), "[msb:0]"],
+      ["module t (input wire [16:0] a, output wire y);\nendmodule", "16 bits"],
+      ["// " + "x".repeat(9000), "longer than"],
+      [wrap("wire constructor;\nassign y = a;"), "cannot be used"],
+      [wrap("wire __proto__;\nassign y = a;"), "cannot be used"],
+    ];
+    for (const [src, msg] of cases) {
+      const e = rtlError(src, "t");
+      assert.ok(e, `accepted: ${src}`);
+      assert.ok(e.message.includes(msg), `${msg} ⇐ ${e.message}`);
+    }
+    assert.equal(rtlError(cases[0][0], "t").line, 3);
+    assert.ok(rtlError(cases[1][0], "t").latch);
+  },
+);
+check("RTL engine reports never-reset registers as unknown, not as 0", () => {
+  const d = RE.compile(
+    "module t (input wire clk, input wire rst, input wire en, output reg [3:0] q);\nalways @(posedge clk) if (rst) q <= 0; else if (en) q <= q + 1;\nendmodule",
+    "t",
+  );
+  const run = RE.runCycles(d, "clk", [
+    { rst: 0n, en: 1n },
+    { rst: 1n, en: 0n },
+    { rst: 0n, en: 1n },
+  ]);
+  assert.deepEqual(
+    run.map((r) => r.outputs.q),
+    [null, 0n, 1n],
+  );
+});
+check(
+  "Every RTL exercise accepts its reference and alternatives and rejects starters and bugs",
+  () => {
+    for (const ex of R.exercises) {
+      if (ex.type === "design") {
+        assert.ok(R.check(ex.id, ex.ref).pass, `${ex.id} reference`);
+        for (const alt of ex.alts)
+          assert.ok(R.check(ex.id, alt).pass, `${ex.id} alt`);
+        for (const w of ex.wrongs) {
+          const r = R.check(ex.id, w);
+          assert.ok(!r.pass && r.feedback.length > 20, `${ex.id} wrong`);
+        }
+        const st = R.check(ex.id, ex.starter);
+        assert.ok(!st.pass && st.feedback, `${ex.id} starter`);
+      }
+      if (ex.type === "vectors") {
+        assert.ok(R.check(ex.id, ex.sample).pass, `${ex.id} sample`);
+        assert.ok(ex.sample.trim().split("\n").length <= ex.maxLines);
+      }
+    }
+    assert.ok(
+      R.check(
+        "latch-fix",
+        R.exercises.find((e) => e.id === "latch-fix").starter,
+      ).feedback.includes("Latch inferred"),
+    );
+    assert.ok(
+      !R.check(
+        "full-adder",
+        R.exercises.find((e) => e.id === "full-adder").wrongs[0],
+      ).pass,
+    );
+    assert.ok(
+      R.check(
+        "and3",
+        "module and3 (input wire a, input wire b, output wire y);\nassign y = a;\nendmodule",
+      ).feedback.includes("Port c"),
+    );
+    assert.ok(
+      R.check(
+        "mux2",
+        "module mux2 (input wire [3:0] a, input wire [3:0] b, input wire sel, output wire y);\nassign y = 0;\nendmodule",
+      ).feedback.includes("4 bits"),
+    );
+    assert.ok(
+      R.check(
+        "and3",
+        "module wrong (input wire a, output wire y); assign y = a; endmodule",
+      ).feedback.includes("named and3"),
+    );
+    const seq = R.check(
+      "counter4",
+      R.exercises.find((e) => e.id === "counter4").wrongs[0],
+    );
+    assert.ok(/^Cycle \d+/.test(seq.feedback), seq.feedback);
+  },
+);
+check(
+  "RTL read, wave and netlist answers are computed from code and real Yosys output",
+  () => {
+    assert.ok(
+      R.check("read-mystery", { w: "4", in: "9", v1: "1000", v0: "4'b1110" })
+        .pass,
+    );
+    assert.ok(
+      !R.check("read-mystery", { w: "4", in: "9", v1: "1110", v0: "1000" })
+        .pass,
+    );
+    const wave = R.exercises.find((e) => e.id === "wave-find");
+    const first = R.waveAnswer(wave);
+    assert.ok(first > 0);
+    assert.deepEqual(
+      [wave.stimulus[first].rst, wave.stimulus[first].en],
+      [1n, 0n],
+    );
+    assert.ok(R.check("wave-find", String(first)).pass);
+    assert.ok(!R.check("wave-find", String(first - 1)).pass);
+    const syn = context.window.RtlSynth;
+    assert.ok(/^Yosys \d/.test(syn.yosys));
+    const c = R.netlistCounts(syn.designs.full_adder.netlist);
+    const cells = syn.designs.full_adder.stat.cells;
+    assert.deepEqual(
+      [c.nand, c.nor, c.not],
+      [cells.$_NAND_, cells.$_NOR_, cells.$_NOT_],
+    );
+    assert.ok(
+      syn.designs.full_adder.stat.transistors.startsWith(String(c.transistors)),
+    );
+    assert.ok(
+      R.check("netlist-read", {
+        nand: c.nand,
+        nor: c.nor,
+        not: c.not,
+        tr: c.transistors,
+      }).pass,
+    );
+    assert.ok(
+      !R.check("netlist-read", {
+        nand: c.nand,
+        nor: c.nor,
+        not: c.not,
+        tr: c.transistors + 2,
+      }).pass,
+    );
+    assert.ok(syn.latchLogs["latch-fix"].includes("Latch inferred"));
+  },
+);
+check(
+  "RTL vector checker validates against the spec, counts caught bugs and reports lines",
+  () => {
+    const ok = R.check("vectors-mux", "0 1 0 1\n1 0 1 1\n1 1 0 0");
+    assert.ok(
+      ok.pass &&
+        ok.criteria.filter((c) => c.label.startsWith("Catches")).length === 4,
+    );
+    const wrongSpec = R.check("vectors-mux", "0 1 0 0");
+    assert.ok(!wrongSpec.pass && wrongSpec.feedback.startsWith("Line 1"));
+    const weak = R.check("vectors-mux", "0 0 0 0\n1 1 1 1");
+    assert.ok(!weak.pass && weak.feedback.includes("miss"));
+    const bad = R.check("vectors-mux", "0 1 0 1\n\n1 2 0 1");
+    assert.ok(!bad.pass && bad.feedback.startsWith("Line 3"));
+    assert.ok(
+      !R.check("vectors-mux", Array(7).fill("0 1 0 1").join("\n")).pass,
+    );
+    const noReset = R.check("counter-vectors", "0 1 1 0");
+    assert.ok(noReset.feedback.includes("reset"));
+  },
+);
+check(
+  "RTL evidence keeps the first pass and recomputes imported records",
+  () => {
+    R.reset();
+    const ex = R.exercises.find((e) => e.id === "and3");
+    assert.ok(!R.submit("and3", ex.starter, "2026-11-05T10:00:00.000Z").pass);
+    assert.ok(R.submit("and3", ex.ref, "2026-11-05T10:01:00.000Z").pass);
+    R.submit("and3", ex.starter, "2026-11-05T10:02:00.000Z");
+    const rec = JSON.parse(memory.get("sp-rtl")).records.and3;
+    assert.deepEqual(
+      [rec.attempts, rec.passedAt, rec.passAnswer],
+      [3, "2026-11-05T10:01:00.000Z", ex.ref],
+    );
+    const clean = R.sanitize({
+      records: {
+        and3: {
+          attempts: 1,
+          passedAt: "2026-11-05T10:00:00.000Z",
+          passAnswer: ex.starter,
+          answer: ex.starter,
+        },
+        mux2: {
+          attempts: 2,
+          passedAt: "2026-11-05T10:00:00.000Z",
+          passAnswer: R.exercises.find((e) => e.id === "mux2").ref,
+        },
+        bogus: { attempts: 5, passedAt: "2026-11-05T10:00:00.000Z" },
+        dffe: {
+          attempts: 1,
+          passedAt: "x",
+          passAnswer: R.exercises.find((e) => e.id === "dffe").ref,
+        },
+        "half-adder": { attempts: 1, answer: "a".repeat(20000) },
+      },
+    });
+    assert.ok(!clean.records.and3.passedAt);
+    assert.ok(clean.records.mux2.passedAt);
+    assert.ok(!clean.records.bogus && !clean.records.dffe.passedAt);
+    assert.equal(clean.records["half-adder"].answer.length, RE.LIMITS.source);
+    R.reset();
+  },
+);
+check("RTL testbenches, project bundle and ZIP are well formed", () => {
+  const ex = R.exercises.find((e) => e.id === "counter4");
+  const tb = R.referenceTestbench(ex);
+  for (const s of [
+    "module tb;",
+    "counter4 dut (",
+    ".clk(clk)",
+    '$dumpfile("wave.vcd")',
+    "PASS: %0d checks",
+    "#5 clk = 1;",
+  ])
+    assert.ok(tb.includes(s), s);
+  const vtb = R.vectorTestbench(
+    R.exercises.find((e) => e.id === "vectors-mux"),
+    "0 1 0 1",
+  );
+  assert.ok(vtb.includes("sel = 1'd0;") && vtb.includes("if (y !== 1'd1)"));
+  const files = R.bundleFiles("2026-11-05T00:00:00.000Z");
+  assert.deepEqual(Object.keys(files), [
+    "design.v",
+    "tb.v",
+    "run.sh",
+    "README.md",
+  ]);
+  assert.ok(
+    files["run.sh"].includes("iverilog -g2005") &&
+      files["run.sh"].includes("stat -tech cmos"),
+  );
+  assert.ok(files["README.md"].includes("not from these tools"));
+  assert.equal(R.crc32(new TextEncoder().encode("123456789")), 0xcbf43926);
+  const z = R.zip({ "a.txt": "hi", "b.txt": "there" }, "p/");
+  const dv = new DataView(z.buffer);
+  assert.equal(dv.getUint32(0, true), 0x04034b50);
+  const eocd = z.length - 22;
+  assert.equal(dv.getUint32(eocd, true), 0x06054b50);
+  assert.equal(dv.getUint16(eocd + 10, true), 2);
+});
+check(
+  "RTL pages render every module with evidence labels and escaped learner code",
+  () => {
+    R.reset();
+    R.submit("and3", "</textarea><script>x</script>");
+    for (const m of R.modules) {
+      context.location.hash = "#rtl/" + m.id;
+      a.render(false);
+      const h = node("#main").innerHTML;
+      assert.ok(h.includes(`<h1>${m.title}</h1>`), m.id);
+      for (const part of [
+        "Worked example",
+        "Where this is used",
+        "References",
+        "Prerequisites",
+        "SiliconPath subset engine",
+      ])
+        assert.ok(h.includes(part), `${m.id} ${part}`);
+      assert.equal((h.match(/data-check=/g) || []).length, m.exercises.length);
+      assert.ok(!/undefined|NaN|\[object/.test(h), m.id);
+      assert.ok(
+        !h.includes("<script>x") && !h.includes("</textarea><script"),
+        m.id,
+      );
+      for (const id of m.sources)
+        assert.ok(
+          catalog.some((r) => r.id === id),
+          id,
+        );
+    }
+    context.location.hash = "#rtl/synthesis";
+    a.render(false);
+    assert.ok(
+      node("#main").innerHTML.includes("Yosys output") &&
+        node("#main").innerHTML.includes(context.window.RtlSynth.yosys),
+    );
+    context.location.hash = "#rtl";
+    a.render(false);
+    const h = node("#main").innerHTML;
+    assert.ok(
+      h.includes("What each result means") &&
+        h.includes("not FPGA implementation") === false,
+    );
+    assert.ok(h.includes("Nothing in this track is FPGA implementation"));
+    assert.ok(context.document.title.startsWith("RTL → Synthesis practice"));
+    assert.ok(a.deskText().includes("RTL → Synthesis: 0/13"));
+    R.reset();
+  },
+);
 const { scripts: manifestScripts, shipped } = await import("./files.mjs");
+const rtlSources = (
+  await Promise.all(
+    ["rtl.js", "rtl-engine.js", "practice.js"].map((f) =>
+      readFile(new URL("../" + f, import.meta.url), "utf8"),
+    ),
+  )
+).join("\n");
 const indexHtml = await readFile(
   new URL("../index.html", import.meta.url),
   "utf8",
@@ -726,6 +1396,7 @@ check(
       guideSource,
       operationsSource,
       indexHtml,
+      rtlSources,
     ])
       assert.ok(!/\son[a-z]+=["']/i.test(src));
   },
