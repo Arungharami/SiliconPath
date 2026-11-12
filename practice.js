@@ -884,7 +884,7 @@ ${drawNode(pdn, "n", cx - b.w / 2, yNode + 14, b.w, b.h)}
   function overview() {
     const s = summary();
     const lookup = sourceLookup();
-    return `<div class="wrap practice-wrap"><div class="page-head"><div class="eyebrow">Practice track · Auto-checked exercises</div><h1>Logic → CMOS</h1><p class="lead">Go from truth tables to transistor-level gate design. Every answer is checked against every possible input, and your results build an evidence record you can export.</p></div>
+    return `<div class="wrap practice-wrap"><nav class="practice-tracks" aria-label="Practice tracks"><a href="#practice" aria-current="page">Logic → CMOS</a><a href="#rtl">RTL → Synthesis</a></nav><div class="page-head"><div class="eyebrow">Practice track · Auto-checked exercises</div><h1>Logic → CMOS</h1><p class="lead">Go from truth tables to transistor-level gate design. Every answer is checked against every possible input, and your results build an evidence record you can export.</p></div>
 <div class="practice-summary panel"><div><span class="eyebrow">Your evidence</span><div class="big-count">${s.done}/${s.total}</div><div class="progress"><span style="width:${(s.done / s.total) * 100}%"></span></div><p class="subtle">Exercises passed on this browser. Pass status is recomputed from your saved answers, not self-reported.</p></div><div class="actions"><button class="btn" data-practice-export>Export evidence portfolio ↓</button><button class="btn secondary small" data-practice-reset>Clear practice records</button></div></div>
 <ol class="practice-modules">${modules
       .map((m, i) => {
